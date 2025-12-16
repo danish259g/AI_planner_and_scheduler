@@ -1,0 +1,4 @@
+/* Basic reset already in App.css, but vite expects index.css */
+body {
+  margin: 0;
+}

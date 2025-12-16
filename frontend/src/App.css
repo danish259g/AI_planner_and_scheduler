@@ -1,0 +1,111 @@
+:root {
+  --primary-color: #646cff;
+  --bg-color: #f9f9f9;
+  --panel-bg: #ffffff;
+  --text-color: #333;
+}
+
+body {
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+}
+
+.app-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+header {
+  background: var(--primary-color);
+  color: white;
+  padding: 1rem;
+  text-align: center;
+}
+
+.main-layout {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.left-panel {
+  width: 350px;
+  background: var(--panel-bg);
+  border-right: 1px solid #ddd;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  overflow-y: auto;
+}
+
+.right-panel {
+  flex: 1;
+  padding: 1rem;
+  overflow-y: auto;
+}
+
+/* Common Components */
+button {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+button:hover {
+  opacity: 0.9;
+}
+
+input[type="text"] {
+  width: 100%;
+  padding: 0.5rem;
+  margin-bottom: 0.5rem;
+  box-sizing: border-box;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+/* Calendar */
+.schedule-grid {
+  margin-top: 1rem;
+}
+
+.calendar-event {
+  background: #eef2ff;
+  border-left: 4px solid var(--primary-color);
+  padding: 0.5rem;
+  margin-bottom: 0.5rem;
+  border-radius: 4px;
+}
+
+/* Chat */
+.chat-window {
+  height: 200px;
+  overflow-y: auto;
+  border: 1px solid #eee;
+  padding: 0.5rem;
+  margin-bottom: 0.5rem;
+  background: #fdfdfd;
+}
+
+.message {
+  padding: 0.4rem;
+  margin-bottom: 0.2rem;
+  border-radius: 4px;
+}
+
+.message.ai {
+  background-color: #f0f0f0;
+}
+
+.message.user {
+  background-color: #e0e7ff;
+  text-align: right;
+}
