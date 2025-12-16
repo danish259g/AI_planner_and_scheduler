@@ -4,6 +4,12 @@ export default function CalendarView({ tasks }) {
     const [schedule, setSchedule] = useState(null);
     const [loading, setLoading] = useState(false);
 
+    // Constants for grid
+    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const startHour = 8; // 8 AM
+    const endHour = 22; // 10 PM
+    const hours = Array.from({ length: endHour - startHour + 1 }, (_, i) => startHour + i);
+
     // Auto-generate schedule when tasks change (for demo purposes)
     useEffect(() => {
         if (tasks.length > 0) {
@@ -30,27 +36,38 @@ export default function CalendarView({ tasks }) {
 
     return (
         <div className="calendar-view">
-            <h2>Weekly Schedule</h2>
-            {loading && <p>Optimizing schedule...</p>}
+            <div className="calendar-header">
+                <h2>Weekly Schedule</h2>
+                {loading && <span className="loading-badge">Optimization in progress...</span>}
+            </div>
 
-            {!loading && !schedule && <p>No schedule yet. Add tasks to begin.</p>}
+            <div className="calendar-grid">
+                {/* Time Column Header */}
+                <div className="grid-cell time-header-cell"></div>
 
-            {!loading && schedule && (
-                <div className="schedule-grid">
-                    {/* Dummy visualization */}
-                    <pre>{JSON.stringify(schedule, null, 2)}</pre>
-                    <div className="week-placeholder">
-                        {/* Visual blocks would go here */}
-                        {schedule.tasks.map((task) => (
-                            <div key={task.id} className="calendar-event">
-                                <strong>{task.title}</strong>
-                                <br />
-                                <span>{task.duration_mins} mins</span>
+                {/* Day Headers */}
+                {days.map(day => (
+                    <div key={day} className="grid-cell day-header">{day}</div>
+                ))}
+
+                {/* Grid Rows */}
+                {hours.map(hour => (
+                    <React.Fragment key={hour}>
+                        <div className="grid-cell time-slot">
+                            {hour}:00
+                        </div>
+                        {days.map(day => (
+                            <div key={`${day}-${hour}`} className="grid-cell day-slot">
+                                {/* 
+                            In a real app, we would map the 'schedule' events here. 
+                            For this dummy skeleton, we just leave them empty or show a placeholder 
+                            if a scheduled item matches.
+                        */}
                             </div>
                         ))}
-                    </div>
-                </div>
-            )}
+                    </React.Fragment>
+                ))}
+            </div>
         </div>
     );
 }
