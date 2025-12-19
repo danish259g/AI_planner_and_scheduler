@@ -29,11 +29,31 @@ export default function CalendarView({ tasks }) {
                         const cellTasks = getTasksForSlot(day, hour);
                         return (
                             <div key={`${day}-${hour}`} className="grid-cell">
-                                {cellTasks.map(task => (
-                                    <div key={task.id} className="calendar-task" title={task.title}>
-                                        {task.title}
-                                    </div>
-                                ))}
+                                {cellTasks.map(task => {
+                                    // 1 hour = 3rem.
+                                    // Height = (duration / 60) * 3rem.
+                                    // Subtract a small margin for spacing.
+                                    const heightRem = (task.duration_mins / 60) * 3;
+
+                                    return (
+                                        <div
+                                            key={task.id}
+                                            className="calendar-task"
+                                            title={task.title}
+                                            style={{
+                                                height: `${heightRem}rem`,
+                                                position: 'absolute',
+                                                top: 0,
+                                                left: 0,
+                                                right: 0,
+                                                marginBottom: '1px',
+                                                zIndex: 10
+                                            }}
+                                        >
+                                            {task.title} ({task.duration_mins}m)
+                                        </div>
+                                    );
+                                })}
                             </div>
                         );
                     })}
