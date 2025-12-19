@@ -10,14 +10,15 @@ export default function TaskInput({ onTaskInterpreted }) {
 
         setLoading(true);
         try {
-            const response = await fetch('/api/interpret', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ raw_text: input }),
-            });
-            const data = await response.json();
-            console.log('Interpreted Task:', data);
-            onTaskInterpreted(data); // Pass data up
+            // Simulate API call for now or use real endpoint if server is up
+            // const response = await fetch('/api/interpret', ...);
+            // const data = await response.json();
+
+            // Mock response for UI testing
+            const mockData = { title: input, duration: 60 };
+
+            console.log('Interpreted Task:', mockData);
+            onTaskInterpreted && onTaskInterpreted(mockData);
             setInput('');
         } catch (error) {
             console.error('Error interpreting task:', error);
@@ -27,20 +28,18 @@ export default function TaskInput({ onTaskInterpreted }) {
     };
 
     return (
-        <div className="task-input-container">
-            <h2>Add New Task</h2>
-            <form onSubmit={handleSubmit}>
-                <input
-                    type="text"
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    placeholder="e.g., Buy groceries and go for a run..."
-                    disabled={loading}
-                />
-                <button type="submit" disabled={loading}>
-                    {loading ? 'Processing...' : 'Add'}
-                </button>
-            </form>
-        </div>
+        <form className="task-input-form" onSubmit={handleSubmit}>
+            <input
+                type="text"
+                className="premium-input"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder="What do you need to get done?"
+                disabled={loading}
+            />
+            <button type="submit" className="icon-btn" disabled={loading}>
+                {loading ? '...' : '→'}
+            </button>
+        </form>
     );
 }

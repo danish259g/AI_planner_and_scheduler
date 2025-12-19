@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 
 export default function NegotiationChat() {
     const [messages, setMessages] = useState([
-        { sender: 'ai', message: 'Hello! I am your scheduling assistant. How can I help you tweak the plan?' }
+        { sender: 'ai', message: 'Hi there! I can help you adjust your schedule.' }
     ]);
     const [input, setInput] = useState('');
 
@@ -13,41 +13,31 @@ export default function NegotiationChat() {
         setMessages((prev) => [...prev, userMsg]);
         setInput('');
 
-        try {
-            const response = await fetch('/api/chat/negotiate', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    message: input,
-                    history: messages
-                }),
-            });
-            const data = await response.json();
-            setMessages((prev) => [...prev, data]);
-        } catch (error) {
-            console.error('Error negotiating:', error);
-        }
+        // Mock reply
+        setTimeout(() => {
+            setMessages(prev => [...prev, { sender: 'ai', message: "I'll see what I can do." }]);
+        }, 600);
     };
 
     return (
-        <div className="negotiation-chat">
-            <h3>Assistant</h3>
+        <div className="chat-interface">
             <div className="chat-window">
                 {messages.map((msg, idx) => (
                     <div key={idx} className={`message ${msg.sender}`}>
-                        <strong>{msg.sender === 'ai' ? 'AI' : 'You'}:</strong> {msg.message}
+                        <div className="message-bubble">
+                            {msg.message}
+                        </div>
                     </div>
                 ))}
             </div>
-            <div className="chat-input">
+            <div className="chat-input-area">
                 <input
                     type="text"
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
-                    placeholder="Type a message..."
+                    placeholder="Ask assistant..."
                 />
-                <button onClick={sendMessage}>Send</button>
             </div>
         </div>
     );
