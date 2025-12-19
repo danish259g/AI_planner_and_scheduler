@@ -1,12 +1,6 @@
 import React, { useState } from 'react';
 
-export default function TaskBank() {
-    const [tasks, setTasks] = useState([
-        { id: 1, title: 'Draft Q1 Report', time: '2h', tag: 'Work' },
-        { id: 2, title: 'Email Marketing Team', time: '30m', tag: 'Comms' },
-        { id: 3, title: 'Code Review', time: '1h', tag: 'Dev' },
-        { id: 4, title: 'Gym - Leg Day', time: '1.5h', tag: 'Health' },
-    ]);
+export default function TaskBank({ tasks }) {
 
     const handleDragStart = (e, id) => {
         // In a real app, set drag data
@@ -27,7 +21,7 @@ export default function TaskBank() {
                             <span className="bank-card-title">{task.title}</span>
                             <span className="bank-card-tag">{task.tag}</span>
                         </div>
-                        <span className="bank-card-time">{task.time}</span>
+                        <span className="bank-card-time">{task.duration_mins}m</span>
                     </div>
                 ))}
             </div>

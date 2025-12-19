@@ -10,15 +10,21 @@ export default function TaskInput({ onTaskInterpreted }) {
 
         setLoading(true);
         try {
-            // Simulate API call for now or use real endpoint if server is up
-            // const response = await fetch('/api/interpret', ...);
-            // const data = await response.json();
+            // Call the real backend
+            const response = await fetch('http://127.0.0.1:8000/api/interpret', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ raw_text: input })
+            });
 
-            // Mock response for UI testing
-            const mockData = { title: input, duration: 60 };
+            if (!response.ok) {
+                throw new Error(`API error: ${response.status}`);
+            }
 
-            console.log('Interpreted Task:', mockData);
-            onTaskInterpreted && onTaskInterpreted(mockData);
+            const data = await response.json();
+            console.log('Interpreted Task:', data);
+
+            onTaskInterpreted && onTaskInterpreted(data);
             setInput('');
         } catch (error) {
             console.error('Error interpreting task:', error);

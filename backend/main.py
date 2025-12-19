@@ -4,6 +4,7 @@ from typing import List, Optional
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 import random
+from backend.interpreter import interpret_task as interpret_task_logic
 
 app = FastAPI(title="AI Weekly Planner Backend (Skeleton)")
 
@@ -46,13 +47,17 @@ async def root():
 
 @app.post("/api/interpret", response_model=Task)
 async def interpret_task(input: TaskInput):
-    """Dummy interpreter: returns a structured task from text."""
-    return Task(
-        id=str(random.randint(1000, 9999)),
-        title=input.raw_text,
-        duration_mins=60,
-        status="interpreted"
-    )
+    """Real interpreter using Gemini."""
+    try:
+        data = await interpret_task_logic(input.raw_text)
+        return Task(
+            id=str(random.randint(1000, 9999)),
+            title=data.task_name,
+            duration_mins=data.duration,
+            status="interpreted"
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/schedule/generate", response_model=Schedule)
 async def generate_schedule(tasks: List[Task]):
