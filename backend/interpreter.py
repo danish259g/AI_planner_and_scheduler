@@ -5,11 +5,14 @@ from pydantic import BaseModel
 from dotenv import load_dotenv
 import asyncio
 
+from pathlib import Path
+
+env_path = Path(__file__).parent / '.env'
 try:
-    load_dotenv()
+    load_dotenv(dotenv_path=env_path)
 except UnicodeDecodeError:
     # Fallback for UTF-16
-    load_dotenv(encoding='utf-16')
+    load_dotenv(dotenv_path=env_path, encoding='utf-16')
 
 class Task(BaseModel):
     task_name: str

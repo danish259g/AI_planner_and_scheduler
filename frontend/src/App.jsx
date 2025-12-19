@@ -7,11 +7,21 @@ import TaskBank from './components/TaskBank';
 import './App.css';
 
 function App() {
-  const [tasks, setTasks] = useState([]);
+  const [tasks, setTasks] = useState([
+    { id: 1, title: 'Draft Q1 Report', duration_mins: 120, tag: 'Work' },
+    { id: 2, title: 'Email Marketing Team', duration_mins: 30, tag: 'Comms' },
+    { id: 3, title: 'Code Review', duration_mins: 60, tag: 'Dev' },
+    { id: 4, title: 'Gym - Leg Day', duration_mins: 90, tag: 'Health' },
+  ]);
 
   const handleTaskInterpreted = (task) => {
-    // For demo, just log it
-    console.log("Task added:", task);
+    // Add the new task to the list
+    setTasks(prev => [...prev, {
+      id: Date.now(), // simple unique id
+      title: task.title,
+      duration_mins: task.duration_mins,
+      tag: 'New' // default tag for now
+    }]);
   };
 
   const handleQuickAdd = (text) => {
@@ -55,7 +65,7 @@ function App() {
           <h3>
             <span>📥</span> Task Bank
           </h3>
-          <TaskBank />
+          <TaskBank tasks={tasks} />
         </div>
       </section>
 

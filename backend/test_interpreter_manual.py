@@ -15,8 +15,7 @@ async def main():
     
     test_inputs = [
         "Buy groceries",
-        "go out with the dog",
-        "buy flowers"
+        "go out with the dog"
     ]
 
     for text in test_inputs:

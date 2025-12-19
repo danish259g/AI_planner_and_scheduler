@@ -4,7 +4,7 @@ from typing import List, Optional
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 import random
-from interpreter import interpret_task as interpret_task_logic
+from backend.interpreter import interpret_task as interpret_task_logic
 
 app = FastAPI(title="AI Weekly Planner Backend (Skeleton)")
 
