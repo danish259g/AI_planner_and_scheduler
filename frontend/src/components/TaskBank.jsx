@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-export default function TaskBank({ tasks }) {
+export default function TaskBank({ tasks, onDeleteTask }) {
 
     const handleDragStart = (e, id) => {
         // In a real app, set drag data
@@ -9,19 +9,26 @@ export default function TaskBank({ tasks }) {
 
     return (
         <div className="task-bank-content">
-            <div className="bank-list">
+            <div className="task-grid">
                 {tasks.map(task => (
                     <div
                         key={task.id}
-                        className="bank-card"
+                        className="task-chip"
                         draggable
                         onDragStart={(e) => handleDragStart(e, task.id)}
+                        title={`Tag: ${task.tag}`}
                     >
-                        <div className="bank-card-header">
-                            <span className="bank-card-title">{task.title}</span>
-                            <span className="bank-card-tag">{task.tag}</span>
-                        </div>
-                        <span className="bank-card-time">{task.duration_mins}m</span>
+                        <span className="task-chip-title">{task.title}</span>
+                        <span className="task-chip-time">{task.duration_mins}m</span>
+                        <button
+                            className="chip-delete-btn"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onDeleteTask(task.id);
+                            }}
+                        >
+                            ×
+                        </button>
                     </div>
                 ))}
             </div>
