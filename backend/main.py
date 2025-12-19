@@ -1,10 +1,11 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional, Any
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 import random
 from backend.interpreter import interpret_task as interpret_task_logic
+from backend.scheduler import orchestrate_schedule
 
 app = FastAPI(title="AI Weekly Planner Backend (Skeleton)")
 
@@ -22,10 +23,14 @@ class TaskInput(BaseModel):
     raw_text: str
 
 class Task(BaseModel):
-    id: str
+    id: Any # Changed to Any to support int/str ids from frontend
     title: str
     duration_mins: int
     status: str = "pending"
+    tag: Optional[str] = "General"
+    # Scheduling fields
+    scheduled_day: Optional[str] = None
+    scheduled_hour: Optional[int] = None
 
 class Schedule(BaseModel):
     week_id: str
@@ -61,12 +66,35 @@ async def interpret_task(input: TaskInput):
 
 @app.post("/api/schedule/generate", response_model=Schedule)
 async def generate_schedule(tasks: List[Task]):
-    """Dummy scheduler: returns a fake schedule."""
-    # Assign dummy time slots if needed, or just return list
-    return Schedule(
-        week_id="week-1",
-        tasks=tasks
-    )
+    """Real scheduler: calls Gemini to orchestrate."""
+    try:
+        # Convert Pydantic models to dicts for the scheduler
+        task_dicts = [t.dict() for t in tasks]
+        
+        # Call orchestration logic
+        orchestrated_result = await orchestrate_schedule(task_dicts)
+        
+        # Map the results back to the Task objects
+        # We need to map by ID.
+        scheduled_map = {str(item.task_id): item for item in orchestrated_result.schedule}
+        
+        updated_tasks = []
+        for t in tasks:
+            # Check if this task was scheduled
+            matches = scheduled_map.get(str(t.id))
+            if matches:
+                 t.scheduled_day = matches.day
+                 t.scheduled_hour = matches.start_time
+                 t.status = "scheduled"
+            updated_tasks.append(t)
+
+        return Schedule(
+            week_id="week-1",
+            tasks=updated_tasks
+        )
+    except Exception as e:
+        print(f"Scheduling error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/chat/negotiate", response_model=ChatMessage)
 async def negotiate(request: ChatRequest):
@@ -77,4 +105,4 @@ async def negotiate(request: ChatRequest):
     )
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
+    uvicorn.run("backend.main:app", host="127.0.0.1", port=8000, reload=True)

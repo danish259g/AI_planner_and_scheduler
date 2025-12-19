@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-export default function TaskBank({ tasks, onDeleteTask }) {
+export default function TaskBank({ tasks, onDeleteTask, onOrchestrate }) {
 
     const handleDragStart = (e, id) => {
         // In a real app, set drag data
@@ -36,7 +36,7 @@ export default function TaskBank({ tasks, onDeleteTask }) {
             <div className="orchestrate-container">
                 <button
                     className="orchestrate-btn"
-                    onClick={() => console.log('Orchestrating...')}
+                    onClick={onOrchestrate}
                 >
                     <span className="sparkle">✨</span> Orchestrate Week
                 </button>

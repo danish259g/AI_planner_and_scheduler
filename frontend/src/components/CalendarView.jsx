@@ -1,13 +1,15 @@
 import React, { useEffect, useState } from 'react';
 
 export default function CalendarView({ tasks }) {
-    const [schedule, setSchedule] = useState(null);
-    const [loading, setLoading] = useState(false);
-
     const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     const startHour = 8;
     const endHour = 20; // Shortened for clearer view
     const hours = Array.from({ length: endHour - startHour + 1 }, (_, i) => startHour + i);
+
+    const getTasksForSlot = (day, hour) => {
+        if (!tasks) return [];
+        return tasks.filter(t => t.scheduled_day === day && t.scheduled_hour === hour);
+    };
 
     return (
         <div className="calendar-grid">
@@ -23,11 +25,18 @@ export default function CalendarView({ tasks }) {
                     <div className="grid-time-cell">
                         {hour}:00
                     </div>
-                    {days.map(day => (
-                        <div key={`${day}-${hour}`} className="grid-cell">
-                            {/* Schedule items would go here */}
-                        </div>
-                    ))}
+                    {days.map(day => {
+                        const cellTasks = getTasksForSlot(day, hour);
+                        return (
+                            <div key={`${day}-${hour}`} className="grid-cell">
+                                {cellTasks.map(task => (
+                                    <div key={task.id} className="calendar-task" title={task.title}>
+                                        {task.title}
+                                    </div>
+                                ))}
+                            </div>
+                        );
+                    })}
                 </React.Fragment>
             ))}
         </div>

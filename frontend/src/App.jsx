@@ -38,6 +38,32 @@ function App() {
     setTasks(prev => prev.filter(t => t.id !== taskId));
   };
 
+  const handleOrchestrate = async () => {
+    try {
+      console.log("Orchestrating tasks...", tasks);
+      // We only want to send tasks that are not yet scheduled or fully send all to re-optimize?
+      // Let's send all for now.
+      const response = await fetch('http://127.0.0.1:8000/api/schedule/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(tasks)
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log("Orchestration result:", data);
+
+      // Update tasks with the new schedule info
+      setTasks(data.tasks);
+
+    } catch (error) {
+      console.error("Orchestration failed:", error);
+    }
+  };
+
   return (
     <div className="app-container">
       {/* LEFT COLUMN: Inputs & Assistant */}
@@ -75,7 +101,7 @@ function App() {
           <h3>
             <span>📥</span> Task Bank
           </h3>
-          <TaskBank tasks={tasks} onDeleteTask={handleDeleteTask} />
+          <TaskBank tasks={tasks} onDeleteTask={handleDeleteTask} onOrchestrate={handleOrchestrate} />
         </div>
       </section>
 
