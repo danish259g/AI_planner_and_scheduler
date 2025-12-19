@@ -34,6 +34,10 @@ function App() {
     }]);
   };
 
+  const handleDeleteTask = (taskId) => {
+    setTasks(prev => prev.filter(t => t.id !== taskId));
+  };
+
   return (
     <div className="app-container">
       {/* LEFT COLUMN: Inputs & Assistant */}
@@ -71,7 +75,7 @@ function App() {
           <h3>
             <span>📥</span> Task Bank
           </h3>
-          <TaskBank tasks={tasks} />
+          <TaskBank tasks={tasks} onDeleteTask={handleDeleteTask} />
         </div>
       </section>
 

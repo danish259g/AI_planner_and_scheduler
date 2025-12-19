@@ -139,59 +139,102 @@ h3 {
   height: 100%;
 }
 
-.bank-list {
-  flex: 1;
+/* Task Bank Layout */
+.task-bank-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  /* Prevent parent scroll */
+}
+
+.task-grid {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: 0.5rem;
   overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  padding-right: 0.25rem;
+  flex: 1;
+  padding: 0.25rem;
 }
 
-.bank-card {
-  background: #f8fafc;
-  border: 1px solid var(--color-border);
-  padding: 0.75rem;
-  border-radius: var(--radius-md);
-  cursor: grab;
-  transition: all 0.2s;
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.bank-card:hover {
+/* Chip Styling */
+.task-chip {
   background: white;
-  border-color: var(--color-primary);
-  box-shadow: var(--shadow-sm);
-  transform: translateY(-2px);
-}
-
-.bank-card-header {
-  display: flex;
-  justify-content: space-between;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  /* Slightly squarer than pill for task context */
+  padding: 0.35rem 0.6rem;
+  display: inline-flex;
   align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  cursor: grab;
+  transition: all 0.2s ease;
+  max-width: 100%;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
-.bank-card-title {
+.task-chip:hover {
+  border-color: var(--color-primary);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.task-chip-title {
   font-weight: 500;
-  font-size: 0.9rem;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 180px;
 }
 
-.bank-card-tag {
-  font-size: 0.7rem;
-  background: #e2e8f0;
+.task-chip-time {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: #f1f5f9;
   padding: 2px 6px;
   border-radius: 4px;
+  white-space: nowrap;
 }
 
-.bank-card-time {
-  font-size: 0.75rem;
-  color: var(--text-secondary);
+/* Delete Button */
+.chip-delete-btn {
+  background: transparent;
+  color: #94a3b8;
+  border: none;
+  border-radius: 4px;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  margin-left: auto;
+  /* Push to right if we want, or just gap */
+  opacity: 0;
+  transition: all 0.2s;
 }
 
+.chip-delete-btn:hover {
+  background: #fee2e2;
+  color: #ef4444;
+}
+
+.task-chip:hover .chip-delete-btn {
+  opacity: 1;
+}
+
+/* Bottom Button */
 .orchestrate-container {
-  margin-top: 1rem;
+  margin-top: auto;
+  padding-top: 1rem;
+  border-top: 1px solid transparent;
+  /* Optional divider */
 }
 
 .orchestrate-btn {
