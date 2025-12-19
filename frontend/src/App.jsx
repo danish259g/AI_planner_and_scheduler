@@ -24,8 +24,14 @@ function App() {
     }]);
   };
 
-  const handleQuickAdd = (text) => {
-    console.log("Quick add:", text);
+  const handleQuickAdd = (task) => {
+    console.log("Quick add:", task);
+    setTasks(prev => [...prev, {
+      id: Date.now(),
+      title: task.title,
+      duration_mins: task.duration_mins,
+      tag: task.tag
+    }]);
   };
 
   return (
