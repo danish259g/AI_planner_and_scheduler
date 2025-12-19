@@ -1,12 +1,14 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional, Any
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 import random
 from backend.interpreter import interpret_task as interpret_task_logic
+from backend.scheduler import orchestrate_schedule
+import backend.storage as storage
 
-app = FastAPI(title="AI Weekly Planner Backend (Skeleton)")
+app = FastAPI(title="AI Weekly Planner Backend") # Reload trigger
 
 # Configure CORS
 app.add_middleware(
@@ -17,15 +19,18 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# --- Dummy Models ---
+# --- Models ---
 class TaskInput(BaseModel):
     raw_text: str
 
 class Task(BaseModel):
-    id: str
+    id: Any
     title: str
     duration_mins: int
     status: str = "pending"
+    tag: Optional[str] = "General"
+    scheduled_day: Optional[str] = None
+    scheduled_hour: Optional[int] = None
 
 class Schedule(BaseModel):
     week_id: str
@@ -39,11 +44,27 @@ class ChatRequest(BaseModel):
     message: str
     history: List[ChatMessage]
 
-# --- Dummy Endpoints ---
+# --- Endpoints ---
 
 @app.get("/")
 async def root():
     return {"message": "AI Planner Backend is running"}
+
+@app.get("/api/tasks", response_model=List[Task])
+async def get_tasks():
+    return storage.load_tasks()
+
+@app.post("/api/tasks", response_model=Task)
+async def add_task(task: Task):
+    # In a real app we might validate or generate ID backend-side if not provided
+    # For now we trust the frontend or storage wrapper
+    storage.add_task(task.dict())
+    return task
+
+@app.delete("/api/tasks/{task_id}")
+async def delete_task(task_id: str):
+    storage.delete_task(task_id)
+    return {"status": "success"}
 
 @app.post("/api/interpret", response_model=Task)
 async def interpret_task(input: TaskInput):
@@ -51,7 +72,7 @@ async def interpret_task(input: TaskInput):
     try:
         data = await interpret_task_logic(input.raw_text)
         return Task(
-            id=str(random.randint(1000, 9999)),
+            id=str(random.randint(1000, 9999)), # Temporary ID, frontend will likely replace or use this
             title=data.task_name,
             duration_mins=data.duration,
             status="interpreted"
@@ -60,12 +81,46 @@ async def interpret_task(input: TaskInput):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/schedule/generate", response_model=Schedule)
-async def generate_schedule(tasks: List[Task]):
-    """Dummy scheduler: returns a fake schedule."""
-    # Assign dummy time slots if needed, or just return list
+async def generate_schedule(): # No payload needed, reads from DB
+    """Real scheduler: calls Gemini to orchestrate tasks from DB."""
+    try:
+        # 1. Load tasks from DB
+        current_tasks = storage.load_tasks()
+        
+        # 2. Orchestrate (only pending or all? Let's do all for now to re-optimize)
+        orchestrated_result = await orchestrate_schedule(current_tasks)
+        
+        # 3. Update tasks with schedule info
+        scheduled_map = {str(item.task_id): item for item in orchestrated_result.schedule}
+        
+        updated_tasks = []
+        for t in current_tasks:
+            # We are working with dicts from storage
+            t_id = str(t.get("id"))
+            matches = scheduled_map.get(t_id)
+            if matches:
+                 t["scheduled_day"] = matches.day
+                 t["scheduled_hour"] = matches.start_time
+                 t["status"] = "scheduled"
+            updated_tasks.append(t)
+            
+        # 4. Save back to DB
+        storage.save_tasks(updated_tasks)
+
+        return Schedule(
+            week_id="week-1",
+            tasks=updated_tasks
+        )
+    except Exception as e:
+        print(f"Scheduling error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/schedule/clear", response_model=Schedule)
+async def clear_schedule():
+    app.state.tasks = storage.clear_schedule_data()
     return Schedule(
         week_id="week-1",
-        tasks=tasks
+        tasks=app.state.tasks
     )
 
 @app.post("/api/chat/negotiate", response_model=ChatMessage)
@@ -77,4 +132,4 @@ async def negotiate(request: ChatRequest):
     )
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
+    uvicorn.run("backend.main:app", host="127.0.0.1", port=8000, reload=True)

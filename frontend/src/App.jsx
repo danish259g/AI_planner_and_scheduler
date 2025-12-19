@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import TaskInput from './components/TaskInput';
 import CalendarView from './components/CalendarView';
 import NegotiationChat from './components/NegotiationChat';
@@ -7,35 +7,120 @@ import TaskBank from './components/TaskBank';
 import './App.css';
 
 function App() {
-  const [tasks, setTasks] = useState([
-    { id: 1, title: 'Draft Q1 Report', duration_mins: 120, tag: 'Work' },
-    { id: 2, title: 'Email Marketing Team', duration_mins: 30, tag: 'Comms' },
-    { id: 3, title: 'Code Review', duration_mins: 60, tag: 'Dev' },
-    { id: 4, title: 'Gym - Leg Day', duration_mins: 90, tag: 'Health' },
-  ]);
+  const [tasks, setTasks] = useState([]);
 
-  const handleTaskInterpreted = (task) => {
-    // Add the new task to the list
-    setTasks(prev => [...prev, {
-      id: Date.now(), // simple unique id
-      title: task.title,
-      duration_mins: task.duration_mins,
-      tag: 'New' // default tag for now
-    }]);
+  // Effect to load tasks on mount
+  useEffect(() => {
+    fetchTasks();
+  }, []);
+
+  const fetchTasks = async () => {
+    try {
+      const res = await fetch('http://127.0.0.1:8000/api/tasks');
+      if (res.ok) {
+        const data = await res.json();
+        setTasks(data);
+      }
+    } catch (err) {
+      console.error("Failed to fetch tasks", err);
+    }
   };
 
-  const handleQuickAdd = (task) => {
-    console.log("Quick add:", task);
-    setTasks(prev => [...prev, {
+  const handleTaskInterpreted = async (task) => {
+    // Optimistic or wait? We wait as per plan.
+    const newTask = {
+      id: Date.now(), // Still generate temp ID or let backend do it? 
+      // Backend expects ID. Let's send one.
+      title: task.title,
+      duration_mins: task.duration_mins,
+      tag: 'New'
+    };
+
+    try {
+      const res = await fetch('http://127.0.0.1:8000/api/tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newTask)
+      });
+      if (res.ok) {
+        const savedTask = await res.json();
+        setTasks(prev => [...prev, savedTask]);
+      }
+    } catch (err) {
+      console.error("Failed to add task", err);
+    }
+  };
+
+  const handleQuickAdd = async (task) => {
+    const newTask = {
       id: Date.now(),
       title: task.title,
       duration_mins: task.duration_mins,
       tag: task.tag
-    }]);
+    };
+    try {
+      const res = await fetch('http://127.0.0.1:8000/api/tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newTask)
+      });
+      if (res.ok) {
+        const savedTask = await res.json();
+        setTasks(prev => [...prev, savedTask]);
+      }
+    } catch (err) {
+      console.error("Failed to quick add task", err);
+    }
   };
 
-  const handleDeleteTask = (taskId) => {
-    setTasks(prev => prev.filter(t => t.id !== taskId));
+  const handleDeleteTask = async (taskId) => {
+    try {
+      const res = await fetch(`http://127.0.0.1:8000/api/tasks/${taskId}`, {
+        method: 'DELETE'
+      });
+      if (res.ok) {
+        setTasks(prev => prev.filter(t => t.id !== taskId));
+      }
+    } catch (err) {
+      console.error("Failed to delete task", err);
+    }
+  };
+
+  const handleOrchestrate = async () => {
+    try {
+      console.log("Orchestrating tasks...");
+      // No body needed now, backend reads from DB
+      const response = await fetch('http://127.0.0.1:8000/api/schedule/generate', {
+        method: 'POST'
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log("Orchestration result:", data);
+
+      // Update tasks with the new schedule info
+      setTasks(data.tasks);
+
+    } catch (error) {
+      console.error("Orchestration failed:", error);
+    }
+  };
+
+  const handleClearSchedule = async () => {
+    try {
+      const response = await fetch('http://127.0.0.1:8000/api/schedule/clear', {
+        method: 'POST'
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setTasks(data.tasks);
+      }
+    } catch (error) {
+      console.error("Clear failed", error);
+    }
   };
 
   return (
@@ -75,14 +160,45 @@ function App() {
           <h3>
             <span>📥</span> Task Bank
           </h3>
-          <TaskBank tasks={tasks} onDeleteTask={handleDeleteTask} />
+          <TaskBank tasks={tasks} onDeleteTask={handleDeleteTask} onOrchestrate={handleOrchestrate} />
         </div>
       </section>
 
       {/* RIGHT COLUMN: Schedule */}
       <section className="layout-schedule">
-        <div style={{ padding: '1rem', borderBottom: '1px solid var(--color-border)', background: 'white' }}>
+        <div style={{
+          padding: '1rem',
+          borderBottom: '1px solid var(--color-border)',
+          background: 'white',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center'
+        }}>
           <h3 style={{ margin: 0 }}>📅 Weekly Schedule</h3>
+          <button
+            onClick={handleClearSchedule}
+            className="clear-btn"
+            style={{
+              background: 'transparent',
+              border: '1px solid var(--color-border)',
+              borderRadius: '6px',
+              padding: '0.4rem 0.8rem',
+              fontSize: '0.85rem',
+              cursor: 'pointer',
+              color: 'var(--text-secondary)',
+              transition: 'all 0.2s'
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.borderColor = 'var(--color-primary)';
+              e.currentTarget.style.color = 'var(--color-primary)';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.borderColor = 'var(--color-border)';
+              e.currentTarget.style.color = 'var(--text-secondary)';
+            }}
+          >
+            Clear
+          </button>
         </div>
         <CalendarView tasks={tasks} />
       </section>
