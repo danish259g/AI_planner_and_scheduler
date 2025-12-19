@@ -64,6 +64,13 @@ function App() {
     }
   };
 
+  const handleClearSchedule = () => {
+    setTasks(prev => prev.map(t => {
+      const { scheduled_day, scheduled_hour, ...rest } = t;
+      return { ...rest, status: 'pending' };
+    }));
+  };
+
   return (
     <div className="app-container">
       {/* LEFT COLUMN: Inputs & Assistant */}
@@ -107,8 +114,39 @@ function App() {
 
       {/* RIGHT COLUMN: Schedule */}
       <section className="layout-schedule">
-        <div style={{ padding: '1rem', borderBottom: '1px solid var(--color-border)', background: 'white' }}>
+        <div style={{
+          padding: '1rem',
+          borderBottom: '1px solid var(--color-border)',
+          background: 'white',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center'
+        }}>
           <h3 style={{ margin: 0 }}>📅 Weekly Schedule</h3>
+          <button
+            onClick={handleClearSchedule}
+            className="clear-btn"
+            style={{
+              background: 'transparent',
+              border: '1px solid var(--color-border)',
+              borderRadius: '6px',
+              padding: '0.4rem 0.8rem',
+              fontSize: '0.85rem',
+              cursor: 'pointer',
+              color: 'var(--text-secondary)',
+              transition: 'all 0.2s'
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.borderColor = 'var(--color-primary)';
+              e.currentTarget.style.color = 'var(--color-primary)';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.borderColor = 'var(--color-border)';
+              e.currentTarget.style.color = 'var(--text-secondary)';
+            }}
+          >
+            Clear
+          </button>
         </div>
         <CalendarView tasks={tasks} />
       </section>
