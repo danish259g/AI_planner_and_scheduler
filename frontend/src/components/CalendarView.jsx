@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 
-export default function CalendarView({ tasks }) {
+export default function CalendarView({ tasks, onTaskMove }) {
     const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     const startHour = 8;
     const endHour = 20; // Shortened for clearer view
@@ -35,6 +35,25 @@ export default function CalendarView({ tasks }) {
         return colors[tag] || '#2196f3';
     };
 
+    const handleDragStart = (e, taskId) => {
+        e.dataTransfer.setData("taskId", taskId);
+    };
+
+    const handleDragOver = (e) => {
+        e.preventDefault(); // Essential to allow dropping
+    };
+
+    const handleDrop = (e, day, hour) => {
+        e.preventDefault();
+        const taskId = e.dataTransfer.getData("taskId");
+        // Convert string ID to number if needed, match backend ID type
+        // Actually our IDs are numbers (timestamps), but getData returns string
+        if (taskId && onTaskMove) {
+            // Find task to check if ID is number or string
+            onTaskMove(Number(taskId), day, hour);
+        }
+    };
+
     return (
         <div className="calendar-grid">
             {/* Header Row */}
@@ -52,7 +71,12 @@ export default function CalendarView({ tasks }) {
                     {days.map(day => {
                         const cellTasks = getTasksForSlot(day, hour);
                         return (
-                            <div key={`${day}-${hour}`} className="grid-cell">
+                            <div
+                                key={`${day}-${hour}`}
+                                className="grid-cell"
+                                onDragOver={handleDragOver}
+                                onDrop={(e) => handleDrop(e, day, hour)}
+                            >
                                 {cellTasks.map(task => {
                                     // 1 hour = 3rem.
                                     // Height = (duration / 60) * 3rem.
@@ -65,6 +89,8 @@ export default function CalendarView({ tasks }) {
                                         <div
                                             key={task.id}
                                             className="calendar-task"
+                                            draggable
+                                            onDragStart={(e) => handleDragStart(e, task.id)}
                                             title={`${task.name || task.title} (${duration}m)`}
                                             style={{
                                                 height: `${heightRem}rem`,
@@ -80,7 +106,8 @@ export default function CalendarView({ tasks }) {
                                                 fontSize: '0.75rem',
                                                 padding: '2px 4px',
                                                 overflow: 'hidden',
-                                                boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
+                                                boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
+                                                cursor: 'move'
                                             }}
                                         >
                                             <div style={{ fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>

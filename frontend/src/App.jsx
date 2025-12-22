@@ -158,6 +158,37 @@ function App() {
     }
   };
 
+  const handleTaskMove = async (taskId, newDay, newHour) => {
+    console.log('Moving task', taskId, 'to', newDay, newHour);
+
+    const taskIndex = tasks.findIndex(t => t.id === taskId);
+    if (taskIndex === -1) return;
+
+    const updatedTask = {
+      ...tasks[taskIndex],
+      scheduled_day: newDay,
+      scheduled_hour: newHour,
+      status: 'scheduled'
+    };
+
+    // Optimistic update
+    const newTasks = [...tasks];
+    newTasks[taskIndex] = updatedTask;
+    setTasks(newTasks);
+
+    try {
+      // Persist
+      await fetch('http://127.0.0.1:8000/api/tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedTask)
+      });
+    } catch (err) {
+      console.error("Failed to move task", err);
+      // Revert on failure would go here
+    }
+  };
+
   return (
     <div className="app-container">
       {/* LEFT COLUMN: Inputs & Assistant */}
@@ -235,7 +266,7 @@ function App() {
             Clear
           </button>
         </div>
-        <CalendarView tasks={tasks} />
+        <CalendarView tasks={tasks} onTaskMove={handleTaskMove} />
       </section>
     </div>
   );

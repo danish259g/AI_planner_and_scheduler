@@ -22,7 +22,14 @@ def save_tasks(tasks: List[Dict[str, Any]]):
 
 def add_task(task: Dict[str, Any]) -> List[Dict[str, Any]]:
     tasks = load_tasks()
-    tasks.append(task)
+    # Check if exists
+    existing_index = next((i for i, t in enumerate(tasks) if str(t.get("id")) == str(task.get("id"))), -1)
+    
+    if existing_index >= 0:
+        tasks[existing_index] = task
+    else:
+        tasks.append(task)
+        
     save_tasks(tasks)
     return tasks
 
