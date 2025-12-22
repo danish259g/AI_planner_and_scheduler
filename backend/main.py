@@ -44,6 +44,9 @@ class Task(BaseModel):
     scheduled_start: Optional[float] = None # Hour 0-23
     scheduled_end: Optional[float] = None # Hour 0-24
 
+class UserProfile(BaseModel):
+    profile: str
+
 class Schedule(BaseModel):
     week_id: str
     tasks: List[Task]
@@ -128,9 +131,18 @@ async def generate_schedule(): # No payload needed, reads from DB
              if "duration_mins" in t and "duration" not in t: t["duration"] = t["duration_mins"]
              current_tasks.append(t)
 
+        # Filter for pending tasks
+        pending_tasks = [t for t in current_tasks if t.get("status") == "pending"]
+        if not pending_tasks:
+            # If no pending tasks, return current tasks as is
+            return Schedule(week_id="empty", tasks=current_tasks)
+
+        # Get User Profile
+        user_profile = storage.get_user_profile()
+        print(f"Orchestrating with User Profile: {user_profile}")
         
         # 2. Orchestrate (only pending or all? Let's do all for now to re-optimize)
-        orchestrated_result = await orchestrate_schedule(current_tasks)
+        orchestrated_result = await orchestrate_schedule(pending_tasks, user_profile)
         
         # 3. Verify
         warnings = verify_schedule_algorithmic(orchestrated_result)
@@ -141,7 +153,7 @@ async def generate_schedule(): # No payload needed, reads from DB
         scheduled_map = {str(item.task_id): item for item in orchestrated_result.schedule}
         
         updated_tasks = []
-        for t in current_tasks:
+        for t in current_tasks: # Iterate through all tasks, not just pending
             # We are working with dicts from storage
             t_id = str(t.get("id"))
             matches = scheduled_map.get(t_id)
@@ -150,24 +162,7 @@ async def generate_schedule(): # No payload needed, reads from DB
                  t["scheduled_start"] = matches.start_time
                  # Calculate end time from duration
                  duration_hours = t.get("duration", 30) / 60
-                 t["scheduled_end"] = int(matches.start_time + duration_hours + 0.5) # Round to nearest hour for simplicity? Or keep float? User asked for int hours in model usually. Let's keep int for now as per schema.
-                 # Wait, schema said int. Let's use ceil or standard math.
-                 # Actually, let's keep it simple: start + duration/60.
-                 # verification usually checks float.
-                 # The user request said "schd_start and sched_end".
-                 # Let's align with Verifier which uses floats internally maybe?
-                 # No, Task model says Optional[int].
-                 # If duration is 30 mins, end is X.5.
-                 # I should probably change Task model to float OR keep int and just imply it's an hour block.
-                 # User said "scheduled_hour" (singular) previously.
-                 # Let's use float for precision if needed, OR int if we stick to hourly slots.
-                 # Scheduler output is int start_time.
-                 # Let's stick to int for robust "blocks", assuming 1h granularity for now?
-                 # BUT, 30 min tasks exist.
-                 # Better to make them float.
-                 # Checking Task model again... it was `scheduled_hour: Optional[int]`.
-                 # I will change them to float to support 9.5 (9:30).
-                 t["scheduled_end"] = matches.start_time + (t.get("duration", 30) / 60)
+                 t["scheduled_end"] = matches.start_time + duration_hours
                  t["status"] = "scheduled"
             updated_tasks.append(t)
             
@@ -186,6 +181,15 @@ async def generate_schedule(): # No payload needed, reads from DB
         print(f"Scheduling error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.get("/api/profile")
+def get_profile():
+    return {"profile": storage.get_user_profile()}
+
+@app.post("/api/profile")
+def update_profile(data: UserProfile):
+    storage.update_user_profile(data.profile)
+    return {"status": "updated", "profile": data.profile}
+
 @app.post("/api/negotiate", response_model=Schedule)
 async def negotiate_schedule(request: ChatRequest):
     """Refine schedule based on user chat message"""
@@ -193,7 +197,7 @@ async def negotiate_schedule(request: ChatRequest):
         tasks = storage.load_tasks()
         
         # Call orchestration with user feedback
-        orchestrated_result = await orchestrate_schedule(tasks, user_feedback=request.message)
+        orchestrated_result = await scheduler_orchestrate_schedule(tasks, user_feedback=request.message)
         
         # Verify
         warnings = verify_schedule_algorithmic(orchestrated_result)

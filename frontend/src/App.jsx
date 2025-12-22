@@ -8,6 +8,8 @@ import './App.css';
 
 function App() {
   const [tasks, setTasks] = useState([]);
+  const [isVibeOpen, setIsVibeOpen] = useState(false);
+  const [userProfile, setUserProfile] = useState("");
   const [messages, setMessages] = useState([
     { sender: 'ai', message: 'Hi there! I can help you adjust your schedule.' }
   ]);
@@ -15,7 +17,34 @@ function App() {
   // Effect to load tasks on mount
   useEffect(() => {
     fetchTasks();
+    fetchProfile();
   }, []);
+
+  const fetchProfile = async () => {
+    try {
+      const res = await fetch('http://127.0.0.1:8000/api/profile');
+      if (res.ok) {
+        const data = await res.json();
+        setUserProfile(data.profile);
+      }
+    } catch (err) {
+      console.error("Failed to fetch profile", err);
+    }
+  };
+
+  const handleSaveProfile = async () => {
+    try {
+      await fetch('http://127.0.0.1:8000/api/profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ profile: userProfile })
+      });
+      setIsVibeOpen(false);
+      setMessages(prev => [...prev, { sender: 'ai', message: "Got it! I've updated your vibe preferences." }]);
+    } catch (err) {
+      console.error("Failed to save profile", err);
+    }
+  };
 
   const handleSendMessage = async (text) => {
     setMessages(prev => [...prev, { sender: 'user', message: text }]);
@@ -249,7 +278,9 @@ function App() {
           <Favorites onQuickAdd={handleQuickAdd} />
         </div>
 
-        {/* Assistant (Moved here) */}
+
+
+        {/* Assistant */}
         <div className="glass-panel flex-grow">
           <h3>
             <span>🤖</span> Assistant
@@ -259,13 +290,14 @@ function App() {
 
       </section>
 
-      {/* CENTER COLUMN: Task Bank */}
+      {/* CENTER COLUMN: Task Bank (Now empty or removed) */}
       <section className="layout-center">
         <div className="glass-panel flex-grow">
-          <h3>
-            <span>📥</span> Task Bank
-          </h3>
-          <TaskBank tasks={tasks} onDeleteTask={handleDeleteTask} onOrchestrate={handleOrchestrate} />
+          <h3>Here is your task bank! <button className="btn-secondary" style={{ float: 'right', marginTop: '-5px', padding: '6px 12px', fontSize: '0.9rem' }} onClick={() => setIsVibeOpen(true)}>✨ My Vibe</button></h3>
+
+          <div className="task-bank-list" style={{ flexGrow: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+            <TaskBank tasks={tasks} onDeleteTask={handleDeleteTask} onOrchestrate={handleOrchestrate} />
+          </div>
         </div>
       </section>
 
@@ -307,6 +339,31 @@ function App() {
         </div>
         <CalendarView tasks={tasks} onTaskMove={handleTaskMove} />
       </section>
+
+      {/* Vibe Modal */}
+      {isVibeOpen && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
+        }}>
+          <div style={{ backgroundColor: 'white', padding: '2rem', borderRadius: '12px', width: '500px', maxWidth: '90%' }}>
+            <h3 style={{ marginTop: 0 }}>✨ Define Your Vibe</h3>
+            <p style={{ color: '#666', fontSize: '0.9rem', marginBottom: '1rem' }}>
+              Tell the AI about your working style. E.g. "I hate mornings", "Keep Fridays light", "I like 2-hour deep work blocks".
+            </p>
+            <textarea
+              value={userProfile}
+              onChange={(e) => setUserProfile(e.target.value)}
+              style={{ width: '100%', height: '150px', padding: '10px', borderRadius: '8px', border: '1px solid #ddd', marginBottom: '1rem' }}
+              placeholder="Type your preferences here..."
+            />
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+              <button className="btn-secondary" onClick={() => setIsVibeOpen(false)}>Cancel</button>
+              <button className="btn-primary" onClick={handleSaveProfile}>Save Vibe</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

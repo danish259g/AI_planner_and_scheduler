@@ -24,7 +24,7 @@ class WeeklySchedule(BaseModel):
     schedule: List[OrchestratedTask]
     logic_summary: str = Field(description="A brief explanation of how you solved the schedule, highlighting any compromises, bundles, or trade-offs made.")
 
-async def orchestrate_schedule(tasks: List[Dict[str, Any]], user_feedback: str = None) -> WeeklySchedule:
+async def orchestrate_schedule(tasks: List[Dict[str, Any]], user_profile: str = "", user_feedback: str = None) -> WeeklySchedule:
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
         raise ValueError("GEMINI_API_KEY not found in environment variables")
@@ -36,15 +36,13 @@ async def orchestrate_schedule(tasks: List[Dict[str, Any]], user_feedback: str =
     clean_tasks = []
     for t in tasks:
         clean_tasks.append({
-            "id": t.get("id"),
-            "name": t.get("name", t.get("title")), # key fallback
-            "duration": t.get("duration", t.get("duration_mins", 30)),
-            "tag": t.get("tag", "General"),
-            "location": t.get("location", "Unknown"),
-            "priority": t.get("priority", "Medium"),
-            "is_locked": t.get("is_locked", False),
-            "day": t.get("day"),
-            "start_time": t.get("start_time"),
+            "id": t["id"],
+            "name": t.get("name"),
+            "duration": t.get("duration"),
+            "priority": t.get("priority"),
+            "is_locked": t.get("is_locked"),
+            "day": t.get("day"), # Fixed day if locked
+            "start_time": t.get("start_time"), # Fixed time if locked
             "end_time": t.get("end_time"),
             "comments": t.get("comments", ""),
             # Include current schedule state for context
@@ -56,24 +54,16 @@ async def orchestrate_schedule(tasks: List[Dict[str, Any]], user_feedback: str =
     task_list_str = json.dumps(clean_tasks, indent=2)
 
     prompt = f"""
-    You are an intelligent weekly scheduler. Your goal is to assign the following tasks to efficient time slots in a weekly calendar.
+    You are an expert AI Scheduler. Your goal is to create an optimal weekly schedule for the user.
     
-    Tasks (Current State):
+    [USER VIBE & PREFERENCES]
+    The user has a specific working style and set of preferences. You MUST respect these as soft constraints.
+    Maximize the user's satisfaction by aligning the schedule with this "Vibe":
+    "{user_profile}"
+    
+    [INPUT TASKS]
     {task_list_str}
 
-    Global Constraints:
-    - The week days are: Sun, Mon, Tue, Wed, Thu, Fri, Sat.
-    - Standard working hours: 09:00 - 17:00.
-    - Task Bundling: Group tasks with the same 'location' (e.g. all 'Supermarket' errands) or 'tag' to minimize travel/context switching.
-    - **Energy Flow**: Schedule 'High' priority tasks in morning slots (9-12) if possible.
-    - **Locked Tasks**: 
-        - If 'is_locked' is True, you MUST respect 'start_time', 'end_time', and 'day' if provided.
-        - e.g. start_time="17:00" -> schedule at 17.
-        - e.g. day="Mon" -> schedule on Mon.
-    - **Logic**: No overlaps. Respect duration.
-
-    USER INSTRUCTIONS / FEEDBACK:
-    "{user_feedback if user_feedback else 'Create an optimal schedule from scratch.'}"
 
     Instruction:
     - If User Feedback is provided, modify the current schedule to satisfy the request.

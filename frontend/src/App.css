@@ -24,6 +24,8 @@
   gap: 1rem;
   width: 300px;
   flex-shrink: 0;
+  min-height: 0;
+  /* Critical for flex child scrolling */
 }
 
 .layout-schedule {

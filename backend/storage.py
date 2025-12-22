@@ -8,7 +8,7 @@ DB_PATH = Path(__file__).parent / 'database.json'
 def _ensure_db():
     if not DB_PATH.exists():
         with open(DB_PATH, 'w') as f:
-            json.dump({"tasks": []}, f)
+            json.dump({"tasks": [], "user_profile": ""}, f)
 
 def load_tasks() -> List[Dict[str, Any]]:
     _ensure_db()
@@ -40,8 +40,15 @@ def load_tasks() -> List[Dict[str, Any]]:
     return tasks
 
 def save_tasks(tasks: List[Dict[str, Any]]):
+    _ensure_db()
+    # Read existing data to preserve user_profile
+    with open(DB_PATH, 'r') as f:
+        data = json.loads(f.read())
+    
+    data["tasks"] = tasks
+    
     with open(DB_PATH, 'w') as f:
-        json.dump({"tasks": tasks}, f, indent=2)
+        json.dump(data, f, indent=2)
 
 def add_task(task: Dict[str, Any]) -> List[Dict[str, Any]]:
     tasks = load_tasks()
@@ -74,3 +81,21 @@ def clear_schedule_data() -> List[Dict[str, Any]]:
         t["status"] = "pending"
     save_tasks(tasks)
     return tasks
+
+def get_user_profile() -> str:
+    _ensure_db()
+    with open(DB_PATH, 'r') as f:
+        data = json.loads(f.read())
+    return data.get("user_profile", "")
+
+def update_user_profile(profile_text: str) -> str:
+    _ensure_db()
+    with open(DB_PATH, 'r') as f:
+        data = json.loads(f.read())
+    
+    data["user_profile"] = profile_text
+    
+    with open(DB_PATH, 'w') as f:
+        json.dump(data, f, indent=2)
+        
+    return profile_text
