@@ -35,6 +35,9 @@ class Task(BaseModel):
     location: Optional[str] = "Home" 
     priority: Optional[str] = "Medium"
     is_locked: bool = False
+    day: Optional[str] = None
+    start_time: Optional[str] = None
+    end_time: Optional[str] = None
     comments: Optional[str] = ""
     # Scheduling fields
     scheduled_day: Optional[str] = None
@@ -98,6 +101,9 @@ async def interpret_task(input: TaskInput):
             location=data.location,
             priority=data.priority,
             is_locked=data.is_locked,
+            day=data.day,
+            start_time=data.start_time,
+            end_time=data.end_time,
             comments=data.comments,
             status="interpreted"
         )

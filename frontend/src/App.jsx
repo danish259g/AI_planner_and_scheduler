@@ -33,7 +33,14 @@ function App() {
       // Backend expects ID. Let's send one.
       name: task.name || task.title,
       duration: task.duration || task.duration_mins,
-      tag: 'New'
+      tag: task.tag || 'General',
+      location: task.location || 'Home',
+      priority: task.priority || 'Medium',
+      is_locked: task.is_locked || false,
+      day: task.day,
+      start_time: task.start_time,
+      end_time: task.end_time,
+      comments: task.comments || ''
     };
 
     try {
@@ -56,7 +63,11 @@ function App() {
       id: Date.now(),
       name: task.name || task.title,
       duration: task.duration || task.duration_mins,
-      tag: task.tag
+      tag: task.tag || 'General',
+      location: 'Home', // Defaults for quick add
+      priority: 'Medium',
+      is_locked: false,
+      comments: ''
     };
     try {
       const res = await fetch('http://127.0.0.1:8000/api/tasks', {

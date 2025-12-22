@@ -42,6 +42,9 @@ async def orchestrate_schedule(tasks: List[Dict[str, Any]]) -> WeeklySchedule:
             "location": t.get("location", "Unknown"),
             "priority": t.get("priority", "Medium"),
             "is_locked": t.get("is_locked", False),
+            "day": t.get("day"),
+            "start_time": t.get("start_time"),
+            "end_time": t.get("end_time"),
             "comments": t.get("comments", "")
         })
 
@@ -58,7 +61,10 @@ async def orchestrate_schedule(tasks: List[Dict[str, Any]]) -> WeeklySchedule:
     - Standard working hours: 09:00 - 17:00.
     - **Task Bundling**: Group tasks with the same 'location' (e.g. all 'Supermarket' errands) or 'tag' to minimize travel/context switching.
     - **Energy Flow**: Schedule 'High' priority tasks in morning slots (9-12) if possible.
-    - **Locked Tasks**: If 'is_locked' is True and 'comments' specifies a time (e.g. "at 5pm"), you MUST respect that intent (e.g. start_time=17).
+    - **Locked Tasks**: 
+        - If 'is_locked' is True, you MUST respect 'start_time', 'end_time', and 'day' if provided.
+        - e.g. start_time="17:00" -> schedule at 17.
+        - e.g. day="Mon" -> schedule on Mon.
     - **Logic**: No overlaps. Respect duration.
     
     Output:
@@ -67,6 +73,7 @@ async def orchestrate_schedule(tasks: List[Dict[str, Any]]) -> WeeklySchedule:
     """
 
     # Single shot orchestration as per plan (no retry loop for now)
+    # Single shot execution (No retries)
     try:
         response = await client.aio.models.generate_content(
             model='gemini-2.5-flash-lite',
@@ -85,5 +92,4 @@ async def orchestrate_schedule(tasks: List[Dict[str, Any]]) -> WeeklySchedule:
 
     except Exception as e:
         print(f"Error during orchestration: {e}")
-        # In a real app we might return an empty schedule or raise
         raise e

@@ -72,9 +72,13 @@ export default function TaskBank({ tasks, onDeleteTask, onOrchestrate }) {
                 >
                     <strong>{tooltip.task.name || tooltip.task.title}</strong>
                     <div className="tooltip-row"><span>⏱️ Duration:</span> {tooltip.task.duration || tooltip.task.duration_mins}m</div>
-                    <div className="tooltip-row"><span>🏷️ Tag:</span> {tooltip.task.tag}</div>
-                    <div className="tooltip-row"><span>📍 Location:</span> {tooltip.task.location || 'N/A'}</div>
+                    <div className="tooltip-row"><span>🏷️ Tag:</span> {tooltip.task.tag || 'General'}</div>
+                    <div className="tooltip-row"><span>📍 Location:</span> {tooltip.task.location || 'Home'}</div>
                     <div className="tooltip-row"><span>🔥 Priority:</span> {tooltip.task.priority || 'Medium'}</div>
+                    {tooltip.task.day && <div className="tooltip-row"><span>📅 Day:</span> {tooltip.task.day}</div>}
+                    {(tooltip.task.start_time || tooltip.task.end_time) && (
+                        <div className="tooltip-row"><span>⏰ Time:</span> {tooltip.task.start_time || '?'} - {tooltip.task.end_time || '?'}</div>
+                    )}
                     {tooltip.task.is_locked && <div className="tooltip-row"><span>🔒 Locked:</span> Yes</div>}
                     {tooltip.task.comments && <div className="tooltip-row"><span>📝 Note:</span> {tooltip.task.comments}</div>}
                 </div>
