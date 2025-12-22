@@ -6,6 +6,7 @@ import uvicorn
 import random
 from backend.interpreter import interpret_task as interpret_task_logic
 from backend.scheduler import orchestrate_schedule
+from backend.verifier import verify_schedule_algorithmic
 import backend.storage as storage
 
 app = FastAPI(title="AI Weekly Planner Backend") # Reload trigger
@@ -23,18 +24,34 @@ app.add_middleware(
 class TaskInput(BaseModel):
     raw_text: str
 
+# Updated Task model matching interpreter
 class Task(BaseModel):
     id: Any
-    title: str
-    duration_mins: int
+    name: str # Renamed from title
+    duration: int # Renamed from duration_mins to match interpreter
     status: str = "pending"
+    # New Fields
     tag: Optional[str] = "General"
+    location: Optional[str] = "Home" 
+    priority: Optional[str] = "Medium"
+    is_locked: bool = False
+    day: Optional[str] = None
+    start_time: Optional[str] = None
+    end_time: Optional[str] = None
+    comments: Optional[str] = ""
+    # Scheduling fields
     scheduled_day: Optional[str] = None
-    scheduled_hour: Optional[int] = None
+    scheduled_start: Optional[float] = None # Hour 0-23
+    scheduled_end: Optional[float] = None # Hour 0-24
+
+class UserProfile(BaseModel):
+    profile: str
 
 class Schedule(BaseModel):
     week_id: str
     tasks: List[Task]
+    warnings: List[str] = []
+    logic_summary: Optional[str] = ""
 
 class ChatMessage(BaseModel):
     sender: str
@@ -42,7 +59,7 @@ class ChatMessage(BaseModel):
 
 class ChatRequest(BaseModel):
     message: str
-    history: List[ChatMessage]
+    history: Optional[List[ChatMessage]] = None
 
 # --- Endpoints ---
 
@@ -52,7 +69,17 @@ async def root():
 
 @app.get("/api/tasks", response_model=List[Task])
 async def get_tasks():
-    return storage.load_tasks()
+    # Helper to map old DB format if needed, though we should clear DB for fresh start ideally
+    raw_tasks = storage.load_tasks()
+    # Ensure they match the schema (e.g. rename title -> name if old data exists)
+    clean_tasks = []
+    for t in raw_tasks:
+        if "title" in t and "name" not in t:
+            t["name"] = t.pop("title")
+        if "duration_mins" in t and "duration" not in t:
+            t["duration"] = t.pop("duration_mins")
+        clean_tasks.append(t)
+    return clean_tasks
 
 @app.post("/api/tasks", response_model=Task)
 async def add_task(task: Task):
@@ -72,9 +99,17 @@ async def interpret_task(input: TaskInput):
     try:
         data = await interpret_task_logic(input.raw_text)
         return Task(
-            id=str(random.randint(1000, 9999)), # Temporary ID, frontend will likely replace or use this
-            title=data.task_name,
-            duration_mins=data.duration,
+            id=str(random.randint(1000, 9999)), 
+            name=data.name,
+            duration=data.duration,
+            tag=data.tag,
+            location=data.location,
+            priority=data.priority,
+            is_locked=data.is_locked,
+            day=data.day,
+            start_time=data.start_time,
+            end_time=data.end_time,
+            comments=data.comments,
             status="interpreted"
         )
     except Exception as e:
@@ -85,51 +120,130 @@ async def generate_schedule(): # No payload needed, reads from DB
     """Real scheduler: calls Gemini to orchestrate tasks from DB."""
     try:
         # 1. Load tasks from DB
-        current_tasks = storage.load_tasks()
+        raw_tasks = storage.load_tasks()
+        
+        # Normalize keys for Orchestrator
+        current_tasks = []
+        for t in raw_tasks:
+             # Normalize for the scheduler input which expects specific keys or handles fallbacks
+             # Ensure 'name' and 'duration' exist
+             if "title" in t and "name" not in t: t["name"] = t["title"]
+             if "duration_mins" in t and "duration" not in t: t["duration"] = t["duration_mins"]
+             current_tasks.append(t)
+
+        # Filter for pending tasks
+        pending_tasks = [t for t in current_tasks if t.get("status") == "pending"]
+        if not pending_tasks:
+            # If no pending tasks, return current tasks as is
+            return Schedule(week_id="empty", tasks=current_tasks)
+
+        # Get User Profile
+        user_profile = storage.get_user_profile()
+        print(f"Orchestrating with User Profile: {user_profile}")
         
         # 2. Orchestrate (only pending or all? Let's do all for now to re-optimize)
-        orchestrated_result = await orchestrate_schedule(current_tasks)
+        orchestrated_result = await orchestrate_schedule(pending_tasks, user_profile)
         
-        # 3. Update tasks with schedule info
+        # 3. Verify
+        warnings = verify_schedule_algorithmic(orchestrated_result)
+        if warnings:
+            print("Scheduling Warnings:", warnings)
+        
+        # 4. Update tasks with schedule info
         scheduled_map = {str(item.task_id): item for item in orchestrated_result.schedule}
         
         updated_tasks = []
-        for t in current_tasks:
+        for t in current_tasks: # Iterate through all tasks, not just pending
             # We are working with dicts from storage
             t_id = str(t.get("id"))
             matches = scheduled_map.get(t_id)
             if matches:
                  t["scheduled_day"] = matches.day
-                 t["scheduled_hour"] = matches.start_time
+                 t["scheduled_start"] = matches.start_time
+                 # Calculate end time from duration
+                 duration_hours = t.get("duration", 30) / 60
+                 t["scheduled_end"] = matches.start_time + duration_hours
                  t["status"] = "scheduled"
             updated_tasks.append(t)
             
-        # 4. Save back to DB
+        # 5. Save back to DB
         storage.save_tasks(updated_tasks)
 
         return Schedule(
-            week_id="week-1",
-            tasks=updated_tasks
+            week_id=str(random.randint(10000, 99999)),
+            tasks=updated_tasks,
+            warnings=warnings,
+            logic_summary=orchestrated_result.logic_summary
         )
     except Exception as e:
+        if str(e) == "GEMINI_OVERLOADED":
+            raise HTTPException(status_code=503, detail="The AI Scheduler is currently overloaded (Google API 503). Please try again in a few seconds.")
         print(f"Scheduling error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/profile")
+def get_profile():
+    return {"profile": storage.get_user_profile()}
+
+@app.post("/api/profile")
+def update_profile(data: UserProfile):
+    storage.update_user_profile(data.profile)
+    return {"status": "updated", "profile": data.profile}
+
+@app.post("/api/negotiate", response_model=Schedule)
+async def negotiate_schedule(request: ChatRequest):
+    """Refine schedule based on user chat message"""
+    try:
+        tasks = storage.load_tasks()
+        
+        # Get User Profile
+        user_profile = storage.get_user_profile()
+        
+        # Call orchestration with user feedback
+        orchestrated_result = await orchestrate_schedule(tasks, user_profile=user_profile, user_feedback=request.message)
+        
+        # Verify
+        warnings = verify_schedule_algorithmic(orchestrated_result)
+        
+        # Update DB
+        updated_tasks = []
+        for ot in orchestrated_result.schedule:
+            # Find original task
+            # OT task_id might be int, DB might be string/int mix
+            t_orig = next((t for t in tasks if str(t["id"]) == str(ot.task_id)), None)
+            
+            if t_orig:
+                t_orig["scheduled_day"] = ot.day
+                t_orig["scheduled_start"] = ot.start_time
+                t_orig["scheduled_end"] = ot.start_time + (t_orig.get("duration", 30) / 60)
+                t_orig["status"] = "scheduled"
+                updated_tasks.append(t_orig)
+        
+        # Save updates
+        storage.save_tasks(updated_tasks)
+        
+        return Schedule(
+            week_id=str(random.randint(10000, 99999)),
+            tasks=updated_tasks,
+            warnings=warnings,
+            logic_summary=orchestrated_result.logic_summary
+        )
+
+    except Exception as e:
+        if str(e) == "GEMINI_OVERLOADED":
+            raise HTTPException(status_code=503, detail="The AI Scheduler is currently overloaded (Google API 503). Please try again in a few seconds.")
+        print(f"Negotiation error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/schedule/clear", response_model=Schedule)
 async def clear_schedule():
-    app.state.tasks = storage.clear_schedule_data()
+    tasks = storage.clear_schedule_data()
     return Schedule(
-        week_id="week-1",
-        tasks=app.state.tasks
+        week_id="cleared",
+        tasks=tasks
     )
 
-@app.post("/api/chat/negotiate", response_model=ChatMessage)
-async def negotiate(request: ChatRequest):
-    """Dummy negotiator: echoes back a response."""
-    return ChatMessage(
-        sender="ai",
-        message=f"I received your message: '{request.message}'. This is a dummy response from the skeleton."
-    )
+
 
 if __name__ == "__main__":
     uvicorn.run("backend.main:app", host="127.0.0.1", port=8000, reload=True)

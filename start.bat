@@ -1,10 +1,9 @@
 @echo off
-echo Starting AI Planner Project...
+echo Starting AI Planner...
 
-echo Starting Backend on port 8000...
-start "Backend" cmd /k "cd backend && call venv\Scripts\activate && python main.py"
+:: Start Backend
+start cmd /k "cd /d %~dp0 && call backend\venv\Scripts\activate && uvicorn backend.main:app --reload --host 127.0.0.1 --port 8000"
 
-echo Starting Frontend...
-start "Frontend" cmd /k "cd frontend && npm run dev"
-
-echo Done. Backend running on http://localhost:8000, Frontend on http://localhost:5173
+:: Start Frontend 
+cd frontend
+start cmd /k "npm run dev"
