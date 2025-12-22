@@ -11,6 +11,30 @@ export default function CalendarView({ tasks }) {
         return tasks.filter(t => t.scheduled_day === day && t.scheduled_hour === hour);
     };
 
+    const getTagColor = (tag) => {
+        const colors = {
+            'Work': '#e3f2fd', // Light Blue
+            'Personal': '#e8f5e9', // Light Green
+            'Health': '#ffebee', // Light Red
+            'Study': '#f3e5f5', // Light Purple
+            'Errand': '#fff3e0', // Light Orange
+            'Home': '#f5f5f5'    // Grey
+        };
+        return colors[tag] || '#e3f2fd'; // Default to blue-ish
+    };
+
+    const getTagBorderColor = (tag) => {
+        const colors = {
+            'Work': '#2196f3',
+            'Personal': '#4caf50',
+            'Health': '#f44336',
+            'Study': '#9c27b0',
+            'Errand': '#ff9800',
+            'Home': '#9e9e9e'
+        };
+        return colors[tag] || '#2196f3';
+    };
+
     return (
         <div className="calendar-grid">
             {/* Header Row */}
@@ -35,12 +59,13 @@ export default function CalendarView({ tasks }) {
                                     // Subtract a small margin for spacing.
                                     const duration = task.duration || task.duration_mins;
                                     const heightRem = (duration / 60) * 3;
+                                    const tag = task.tag || 'General';
 
                                     return (
                                         <div
                                             key={task.id}
                                             className="calendar-task"
-                                            title={task.name || task.title}
+                                            title={`${task.name || task.title} (${duration}m)`}
                                             style={{
                                                 height: `${heightRem}rem`,
                                                 position: 'absolute',
@@ -48,10 +73,24 @@ export default function CalendarView({ tasks }) {
                                                 left: 0,
                                                 right: 0,
                                                 marginBottom: '1px',
-                                                zIndex: 10
+                                                zIndex: 10,
+                                                backgroundColor: getTagColor(tag),
+                                                borderLeft: `3px solid ${getTagBorderColor(tag)}`,
+                                                color: '#333',
+                                                fontSize: '0.75rem',
+                                                padding: '2px 4px',
+                                                overflow: 'hidden',
+                                                boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
                                             }}
                                         >
-                                            {task.name || task.title} ({duration}m)
+                                            <div style={{ fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                {task.name || task.title}
+                                            </div>
+                                            {task.location && task.location !== 'Unknown' && task.location !== 'Home' && (
+                                                <div style={{ fontSize: '0.7rem', opacity: 0.8, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                    📍 {task.location}
+                                                </div>
+                                            )}
                                         </div>
                                     );
                                 })}

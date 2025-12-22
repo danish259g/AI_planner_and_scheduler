@@ -8,11 +8,22 @@ import './App.css';
 
 function App() {
   const [tasks, setTasks] = useState([]);
+  const [messages, setMessages] = useState([
+    { sender: 'ai', message: 'Hi there! I can help you adjust your schedule.' }
+  ]);
 
   // Effect to load tasks on mount
   useEffect(() => {
     fetchTasks();
   }, []);
+
+  const handleSendMessage = (text) => {
+    setMessages(prev => [...prev, { sender: 'user', message: text }]);
+    // Mock response for now
+    setTimeout(() => {
+      setMessages(prev => [...prev, { sender: 'ai', message: "I'm focusing on the schedule for now." }]);
+    }, 600);
+  };
 
   const fetchTasks = async () => {
     try {
@@ -99,8 +110,8 @@ function App() {
 
   const handleOrchestrate = async () => {
     try {
-      console.log("Orchestrating tasks...");
-      // No body needed now, backend reads from DB
+      setMessages(prev => [...prev, { sender: 'ai', message: "Orchestrating your schedule..." }]);
+
       const response = await fetch('http://127.0.0.1:8000/api/schedule/generate', {
         method: 'POST'
       });
@@ -115,8 +126,20 @@ function App() {
       // Update tasks with the new schedule info
       setTasks(data.tasks);
 
+      // Add Scheduler Feedback to Chat
+      if (data.logic_summary) {
+        setMessages(prev => [...prev, { sender: 'ai', message: `✅ Schedule Updated!\n\n${data.logic_summary}` }]);
+      } else {
+        setMessages(prev => [...prev, { sender: 'ai', message: "✅ Schedule Updated!" }]);
+      }
+
+      if (data.warnings && data.warnings.length > 0) {
+        setMessages(prev => [...prev, { sender: 'ai', message: `⚠️ Warnings: ${data.warnings.join(', ')}` }]);
+      }
+
     } catch (error) {
       console.error("Orchestration failed:", error);
+      setMessages(prev => [...prev, { sender: 'ai', message: "❌ Orchestration failed. Please try again." }]);
     }
   };
 
@@ -128,6 +151,7 @@ function App() {
       if (response.ok) {
         const data = await response.json();
         setTasks(data.tasks);
+        setMessages(prev => [...prev, { sender: 'ai', message: "Schedule cleared." }]);
       }
     } catch (error) {
       console.error("Clear failed", error);
@@ -160,7 +184,7 @@ function App() {
           <h3>
             <span>🤖</span> Assistant
           </h3>
-          <NegotiationChat />
+          <NegotiationChat messages={messages} onSendMessage={handleSendMessage} />
         </div>
 
       </section>

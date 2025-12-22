@@ -47,6 +47,7 @@ class Schedule(BaseModel):
     week_id: str
     tasks: List[Task]
     warnings: List[str] = []
+    logic_summary: Optional[str] = ""
 
 class ChatMessage(BaseModel):
     sender: str
@@ -153,9 +154,10 @@ async def generate_schedule(): # No payload needed, reads from DB
         storage.save_tasks(updated_tasks)
 
         return Schedule(
-            week_id="week-1",
+            week_id=str(random.randint(10000, 99999)),
             tasks=updated_tasks,
-            warnings=warnings
+            warnings=warnings,
+            logic_summary=orchestrated_result.logic_summary
         )
     except Exception as e:
         print(f"Scheduling error: {e}")

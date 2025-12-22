@@ -13,8 +13,8 @@
       "start_time": null,
       "end_time": null,
       "comments": "",
-      "scheduled_day": "Mon",
-      "scheduled_hour": 13
+      "scheduled_day": "Wed",
+      "scheduled_hour": 8
     },
     {
       "id": 1766148137139,
@@ -30,7 +30,7 @@
       "end_time": null,
       "comments": "",
       "scheduled_day": "Mon",
-      "scheduled_hour": 10
+      "scheduled_hour": 9
     },
     {
       "id": 1766148146290,
@@ -45,7 +45,7 @@
       "start_time": null,
       "end_time": null,
       "comments": "",
-      "scheduled_day": "Mon",
+      "scheduled_day": "Wed",
       "scheduled_hour": 17
     },
     {
@@ -61,12 +61,12 @@
       "start_time": null,
       "end_time": null,
       "comments": "",
-      "scheduled_day": "Sat",
-      "scheduled_hour": 15
+      "scheduled_day": "Thu",
+      "scheduled_hour": 19
     },
     {
       "id": 1766410564023,
-      "name": "Study at Technion UNI",
+      "name": "Technion",
       "duration": 420,
       "status": "scheduled",
       "tag": "Study",
@@ -77,7 +77,7 @@
       "start_time": null,
       "end_time": null,
       "comments": "",
-      "scheduled_day": "Fri",
+      "scheduled_day": "Sun",
       "scheduled_hour": 10
     },
     {
@@ -110,7 +110,7 @@
       "end_time": null,
       "comments": "",
       "scheduled_day": "Mon",
-      "scheduled_hour": 9
+      "scheduled_hour": 7
     },
     {
       "id": 1766412737851,
@@ -126,7 +126,23 @@
       "end_time": null,
       "comments": "morning",
       "scheduled_day": "Fri",
-      "scheduled_hour": 9
+      "scheduled_hour": 7
+    },
+    {
+      "id": 1766413460753,
+      "name": "Dinner with family",
+      "duration": 90,
+      "status": "scheduled",
+      "tag": "Personal",
+      "location": "Parents house",
+      "priority": "Medium",
+      "is_locked": true,
+      "day": "Fri",
+      "start_time": null,
+      "end_time": null,
+      "comments": "evening",
+      "scheduled_day": "Fri",
+      "scheduled_hour": 19
     }
   ]
 }

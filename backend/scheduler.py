@@ -22,6 +22,7 @@ class OrchestratedTask(BaseModel):
 
 class WeeklySchedule(BaseModel):
     schedule: List[OrchestratedTask]
+    logic_summary: str = Field(description="A brief explanation of how you solved the schedule, highlighting any compromises, bundles, or trade-offs made.")
 
 async def orchestrate_schedule(tasks: List[Dict[str, Any]]) -> WeeklySchedule:
     api_key = os.getenv("GEMINI_API_KEY")
@@ -70,6 +71,7 @@ async def orchestrate_schedule(tasks: List[Dict[str, Any]]) -> WeeklySchedule:
     Output:
     - Return a JSON object matching the WeeklySchedule schema.
     - 'start_time' should be an integer hour (0-23).
+    - **logic_summary**: Be extremely concise. Only mention key trade-offs or bundles if absolutely necessary. If the schedule is straightforward, just say "Schedule updated." or "Optimized for flow." (Max 1 short sentence).
     """
 
     # Single shot orchestration as per plan (no retry loop for now)

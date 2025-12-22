@@ -1,22 +1,12 @@
 import React, { useState } from 'react';
 
-export default function NegotiationChat() {
-    const [messages, setMessages] = useState([
-        { sender: 'ai', message: 'Hi there! I can help you adjust your schedule.' }
-    ]);
+export default function NegotiationChat({ messages, onSendMessage }) {
     const [input, setInput] = useState('');
 
-    const sendMessage = async () => {
+    const handleSend = () => {
         if (!input.trim()) return;
-
-        const userMsg = { sender: 'user', message: input };
-        setMessages((prev) => [...prev, userMsg]);
+        onSendMessage(input);
         setInput('');
-
-        // Mock reply
-        setTimeout(() => {
-            setMessages(prev => [...prev, { sender: 'ai', message: "I'll see what I can do." }]);
-        }, 600);
     };
 
     return (
@@ -35,7 +25,7 @@ export default function NegotiationChat() {
                     type="text"
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
+                    onKeyDown={(e) => e.key === 'Enter' && handleSend()}
                     placeholder="Ask assistant..."
                 />
             </div>
