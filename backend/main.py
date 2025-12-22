@@ -196,8 +196,11 @@ async def negotiate_schedule(request: ChatRequest):
     try:
         tasks = storage.load_tasks()
         
+        # Get User Profile
+        user_profile = storage.get_user_profile()
+        
         # Call orchestration with user feedback
-        orchestrated_result = await scheduler_orchestrate_schedule(tasks, user_feedback=request.message)
+        orchestrated_result = await orchestrate_schedule(tasks, user_profile=user_profile, user_feedback=request.message)
         
         # Verify
         warnings = verify_schedule_algorithmic(orchestrated_result)
