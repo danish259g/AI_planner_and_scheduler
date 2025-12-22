@@ -17,12 +17,35 @@ function App() {
     fetchTasks();
   }, []);
 
-  const handleSendMessage = (text) => {
+  const handleSendMessage = async (text) => {
     setMessages(prev => [...prev, { sender: 'user', message: text }]);
-    // Mock response for now
-    setTimeout(() => {
-      setMessages(prev => [...prev, { sender: 'ai', message: "I'm focusing on the schedule for now." }]);
-    }, 600);
+
+    try {
+      const response = await fetch('http://127.0.0.1:8000/api/negotiate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: text })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setTasks(data.tasks); // Update calendar
+
+        // Add AI response
+        const reply = data.logic_summary || "Schedule updated.";
+        setMessages(prev => [...prev, { sender: 'ai', message: reply }]);
+      } else {
+        console.error("Negotiation failed");
+        if (response.status === 503) {
+          setMessages(prev => [...prev, { sender: 'ai', message: "⚠️ The AI service is currently overloaded (503). Please wait 30 seconds and try again." }]);
+        } else {
+          setMessages(prev => [...prev, { sender: 'ai', message: "Sorry, I couldn't update the schedule right now." }]);
+        }
+      }
+    } catch (err) {
+      console.error("Error negotiating", err);
+      setMessages(prev => [...prev, { sender: 'ai', message: "Error communicating with server." }]);
+    }
   };
 
   const fetchTasks = async () => {
@@ -117,6 +140,10 @@ function App() {
       });
 
       if (!response.ok) {
+        if (response.status === 503) {
+          setMessages(prev => [...prev, { sender: 'ai', message: "⚠️ The AI service is currently overloaded (503). Please wait 30 seconds and try again." }]);
+          return;
+        }
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
@@ -164,10 +191,22 @@ function App() {
     const taskIndex = tasks.findIndex(t => t.id === taskId);
     if (taskIndex === -1) return;
 
+    const originalTask = tasks[taskIndex];
+    const durationMinutes = originalTask.duration || 60; // Default to 60 minutes if not specified
+
+    // Calculate scheduled_start and scheduled_end as numbers (hours)
+    // We stick to integer hours for the scheduler logic for now, or floats if we want finer grain.
+    // The backend expects number.
+
+    // Ensure we send numbers
+    const scheduled_start = newHour;
+    const scheduled_end = newHour + (durationMinutes / 60);
+
     const updatedTask = {
-      ...tasks[taskIndex],
+      ...originalTask,
       scheduled_day: newDay,
-      scheduled_hour: newHour,
+      scheduled_start: scheduled_start,
+      scheduled_end: scheduled_end,
       status: 'scheduled'
     };
 

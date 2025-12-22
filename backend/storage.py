@@ -13,8 +13,31 @@ def _ensure_db():
 def load_tasks() -> List[Dict[str, Any]]:
     _ensure_db()
     with open(DB_PATH, 'r') as f:
-        data = json.load(f)
-    return data.get("tasks", [])
+        data = json.loads(f.read())
+    
+    tasks = data.get("tasks", [])
+    
+    # MIGRATION: 
+    # If tasks have old 'scheduled_hour' but missing 'scheduled_start', convert them.
+    # We do this on load so the app always sees the new schema.
+    has_changes = False
+    for t in tasks:
+        if "scheduled_hour" in t:
+            if t.get("scheduled_start") is None:
+                t["scheduled_start"] = t["scheduled_hour"]
+                # Infer end
+                duration_hrs = t.get("duration", 30) / 60
+                t["scheduled_end"] = t["scheduled_hour"] + duration_hrs
+                has_changes = True
+            
+            # Remove old key
+            del t["scheduled_hour"]
+            has_changes = True
+            
+    if has_changes:
+        save_tasks(tasks)
+        
+    return tasks
 
 def save_tasks(tasks: List[Dict[str, Any]]):
     with open(DB_PATH, 'w') as f:
@@ -44,8 +67,10 @@ def clear_schedule_data() -> List[Dict[str, Any]]:
     for t in tasks:
         if "scheduled_day" in t:
             del t["scheduled_day"]
-        if "scheduled_hour" in t:
-            del t["scheduled_hour"]
+        if "scheduled_start" in t:
+            del t["scheduled_start"]
+        if "scheduled_end" in t:
+            del t["scheduled_end"]
         t["status"] = "pending"
     save_tasks(tasks)
     return tasks

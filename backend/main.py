@@ -41,7 +41,8 @@ class Task(BaseModel):
     comments: Optional[str] = ""
     # Scheduling fields
     scheduled_day: Optional[str] = None
-    scheduled_hour: Optional[int] = None
+    scheduled_start: Optional[float] = None # Hour 0-23
+    scheduled_end: Optional[float] = None # Hour 0-24
 
 class Schedule(BaseModel):
     week_id: str
@@ -55,7 +56,7 @@ class ChatMessage(BaseModel):
 
 class ChatRequest(BaseModel):
     message: str
-    history: List[ChatMessage]
+    history: Optional[List[ChatMessage]] = None
 
 # --- Endpoints ---
 
@@ -146,7 +147,27 @@ async def generate_schedule(): # No payload needed, reads from DB
             matches = scheduled_map.get(t_id)
             if matches:
                  t["scheduled_day"] = matches.day
-                 t["scheduled_hour"] = matches.start_time
+                 t["scheduled_start"] = matches.start_time
+                 # Calculate end time from duration
+                 duration_hours = t.get("duration", 30) / 60
+                 t["scheduled_end"] = int(matches.start_time + duration_hours + 0.5) # Round to nearest hour for simplicity? Or keep float? User asked for int hours in model usually. Let's keep int for now as per schema.
+                 # Wait, schema said int. Let's use ceil or standard math.
+                 # Actually, let's keep it simple: start + duration/60.
+                 # verification usually checks float.
+                 # The user request said "schd_start and sched_end".
+                 # Let's align with Verifier which uses floats internally maybe?
+                 # No, Task model says Optional[int].
+                 # If duration is 30 mins, end is X.5.
+                 # I should probably change Task model to float OR keep int and just imply it's an hour block.
+                 # User said "scheduled_hour" (singular) previously.
+                 # Let's use float for precision if needed, OR int if we stick to hourly slots.
+                 # Scheduler output is int start_time.
+                 # Let's stick to int for robust "blocks", assuming 1h granularity for now?
+                 # BUT, 30 min tasks exist.
+                 # Better to make them float.
+                 # Checking Task model again... it was `scheduled_hour: Optional[int]`.
+                 # I will change them to float to support 9.5 (9:30).
+                 t["scheduled_end"] = matches.start_time + (t.get("duration", 30) / 60)
                  t["status"] = "scheduled"
             updated_tasks.append(t)
             
@@ -160,24 +181,62 @@ async def generate_schedule(): # No payload needed, reads from DB
             logic_summary=orchestrated_result.logic_summary
         )
     except Exception as e:
+        if str(e) == "GEMINI_OVERLOADED":
+            raise HTTPException(status_code=503, detail="The AI Scheduler is currently overloaded (Google API 503). Please try again in a few seconds.")
         print(f"Scheduling error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/negotiate", response_model=Schedule)
+async def negotiate_schedule(request: ChatRequest):
+    """Refine schedule based on user chat message"""
+    try:
+        tasks = storage.load_tasks()
+        
+        # Call orchestration with user feedback
+        orchestrated_result = await orchestrate_schedule(tasks, user_feedback=request.message)
+        
+        # Verify
+        warnings = verify_schedule_algorithmic(orchestrated_result)
+        
+        # Update DB
+        updated_tasks = []
+        for ot in orchestrated_result.schedule:
+            # Find original task
+            # OT task_id might be int, DB might be string/int mix
+            t_orig = next((t for t in tasks if str(t["id"]) == str(ot.task_id)), None)
+            
+            if t_orig:
+                t_orig["scheduled_day"] = ot.day
+                t_orig["scheduled_start"] = ot.start_time
+                t_orig["scheduled_end"] = ot.start_time + (t_orig.get("duration", 30) / 60)
+                t_orig["status"] = "scheduled"
+                updated_tasks.append(t_orig)
+        
+        # Save updates
+        storage.save_tasks(updated_tasks)
+        
+        return Schedule(
+            week_id=str(random.randint(10000, 99999)),
+            tasks=updated_tasks,
+            warnings=warnings,
+            logic_summary=orchestrated_result.logic_summary
+        )
+
+    except Exception as e:
+        if str(e) == "GEMINI_OVERLOADED":
+            raise HTTPException(status_code=503, detail="The AI Scheduler is currently overloaded (Google API 503). Please try again in a few seconds.")
+        print(f"Negotiation error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/schedule/clear", response_model=Schedule)
 async def clear_schedule():
-    app.state.tasks = storage.clear_schedule_data()
+    tasks = storage.clear_schedule_data()
     return Schedule(
-        week_id="week-1",
-        tasks=app.state.tasks
+        week_id="cleared",
+        tasks=tasks
     )
 
-@app.post("/api/chat/negotiate", response_model=ChatMessage)
-async def negotiate(request: ChatRequest):
-    """Dummy negotiator: echoes back a response."""
-    return ChatMessage(
-        sender="ai",
-        message=f"I received your message: '{request.message}'. This is a dummy response from the skeleton."
-    )
+
 
 if __name__ == "__main__":
     uvicorn.run("backend.main:app", host="127.0.0.1", port=8000, reload=True)

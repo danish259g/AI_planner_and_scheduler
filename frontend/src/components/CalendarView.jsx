@@ -8,7 +8,8 @@ export default function CalendarView({ tasks, onTaskMove }) {
 
     const getTasksForSlot = (day, hour) => {
         if (!tasks) return [];
-        return tasks.filter(t => t.scheduled_day === day && t.scheduled_hour === hour);
+        // Match integer part of start time for the hour slot
+        return tasks.filter(t => t.scheduled_day === day && Math.floor(t.scheduled_start) === hour);
     };
 
     const getTagColor = (tag) => {
