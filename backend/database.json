@@ -4,36 +4,60 @@
       "id": 1766148129255,
       "title": "Go for a run",
       "duration_mins": 45,
-      "status": "pending",
-      "tag": "Health"
-    },
-    {
-      "id": 1766148136799,
-      "title": "Deep Work",
-      "duration_mins": 120,
-      "status": "pending",
-      "tag": "Work"
+      "status": "scheduled",
+      "tag": "Health",
+      "name": "Go for a run",
+      "duration": 45,
+      "scheduled_day": "Mon",
+      "scheduled_hour": 9
     },
     {
       "id": 1766148137139,
       "title": "Deep Work",
       "duration_mins": 120,
-      "status": "pending",
-      "tag": "Work"
+      "status": "scheduled",
+      "tag": "Work",
+      "name": "Deep Work",
+      "duration": 120,
+      "scheduled_day": "Mon",
+      "scheduled_hour": 10
     },
     {
       "id": 1766148146290,
       "title": "Call Mom",
       "duration_mins": 15,
-      "status": "pending",
-      "tag": "Personal"
+      "status": "scheduled",
+      "tag": "Personal",
+      "name": "Call Mom",
+      "duration": 15,
+      "scheduled_day": "Mon",
+      "scheduled_hour": 13
     },
     {
-      "id": 1766148196971,
-      "title": "coffee with friend",
-      "duration_mins": 60,
-      "status": "pending",
-      "tag": "New"
+      "id": 1766410467189,
+      "name": "Get drinks with girlfriend",
+      "duration": 60,
+      "status": "scheduled",
+      "tag": "New",
+      "location": "Home",
+      "priority": "Medium",
+      "is_locked": false,
+      "comments": "",
+      "scheduled_day": "Fri",
+      "scheduled_hour": 18
+    },
+    {
+      "id": 1766410564023,
+      "name": "Study at Technion UNI",
+      "duration": 420,
+      "status": "scheduled",
+      "tag": "New",
+      "location": "Home",
+      "priority": "Medium",
+      "is_locked": false,
+      "comments": "",
+      "scheduled_day": "Tue",
+      "scheduled_hour": 9
     }
   ]
 }

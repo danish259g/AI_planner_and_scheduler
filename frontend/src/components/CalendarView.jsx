@@ -33,13 +33,14 @@ export default function CalendarView({ tasks }) {
                                     // 1 hour = 3rem.
                                     // Height = (duration / 60) * 3rem.
                                     // Subtract a small margin for spacing.
-                                    const heightRem = (task.duration_mins / 60) * 3;
+                                    const duration = task.duration || task.duration_mins;
+                                    const heightRem = (duration / 60) * 3;
 
                                     return (
                                         <div
                                             key={task.id}
                                             className="calendar-task"
-                                            title={task.title}
+                                            title={task.name || task.title}
                                             style={{
                                                 height: `${heightRem}rem`,
                                                 position: 'absolute',
@@ -50,7 +51,7 @@ export default function CalendarView({ tasks }) {
                                                 zIndex: 10
                                             }}
                                         >
-                                            {task.title} ({task.duration_mins}m)
+                                            {task.name || task.title} ({duration}m)
                                         </div>
                                     );
                                 })}

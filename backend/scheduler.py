@@ -1,9 +1,9 @@
 import os
 import json
 import asyncio
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from google import genai
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from dotenv import load_dotenv
 from pathlib import Path
 
@@ -14,10 +14,11 @@ except UnicodeDecodeError:
     load_dotenv(dotenv_path=env_path, encoding='utf-16')
 
 class OrchestratedTask(BaseModel):
-    task_id: Any
-    day: str
-    start_time: int
-    duration_mins: int
+    task_id: Any = Field(description="The ID of the task being scheduled")
+    day: str = Field(description="Day of the week (Mon, Tue, Wed, Thu, Fri, Sat, Sun)")
+    start_time: int = Field(description="Start hour (0-23)")
+    duration_mins: int = Field(description="Duration in minutes")
+    rationale: Optional[str] = Field(description="Brief reason for this slot (e.g. 'Bundled with other errands', 'High energy morning slot')")
 
 class WeeklySchedule(BaseModel):
     schedule: List[OrchestratedTask]
@@ -30,55 +31,59 @@ async def orchestrate_schedule(tasks: List[Dict[str, Any]]) -> WeeklySchedule:
     client = genai.Client(api_key=api_key)
 
     # Convert tasks to a cleaner format for the LLM
-    task_list_str = json.dumps([{
-        "id": t.get("id"),
-        "title": t.get("title"),
-        "duration_mins": t.get("duration_mins", 60),
-        "tag": t.get("tag", "General")
-    } for t in tasks], indent=2)
+    # We strip out implementation details and send the rich semantic fields
+    clean_tasks = []
+    for t in tasks:
+        clean_tasks.append({
+            "id": t.get("id"),
+            "name": t.get("name", t.get("title")), # key fallback
+            "duration": t.get("duration", t.get("duration_mins", 30)),
+            "tag": t.get("tag", "General"),
+            "location": t.get("location", "Unknown"),
+            "priority": t.get("priority", "Medium"),
+            "is_locked": t.get("is_locked", False),
+            "comments": t.get("comments", "")
+        })
+
+    task_list_str = json.dumps(clean_tasks, indent=2)
 
     prompt = f"""
     You are an intelligent weekly scheduler. Your goal is to assign the following tasks to efficient time slots in a weekly calendar.
     
-    Constraints:
-    - The week days are: Mon, Tue, Wed, Thu, Fri, Sat, Sun.
-    - Standard working hours are roughly 8:00 (8) to 18:00 (18), but you can schedule personal tasks outside these hours if appropriate.
-    - Do not overlap tasks.
-    - Respect the duration of each task.
-    - Group similar tasks (by tag) together if possible to minimize context switching.
-    - Output a valid JSON object matching the WeeklySchedule schema.
-    - 'start_time' should be an integer hour (0-23). For simpler visualization, stick to full hours (e.g. 9, 14).
-
-    Task List:
+    Tasks:
     {task_list_str}
+
+    Global Constraints:
+    - The week days are: Mon, Tue, Wed, Thu, Fri, Sat, Sun.
+    - Standard working hours: 09:00 - 17:00.
+    - **Task Bundling**: Group tasks with the same 'location' (e.g. all 'Supermarket' errands) or 'tag' to minimize travel/context switching.
+    - **Energy Flow**: Schedule 'High' priority tasks in morning slots (9-12) if possible.
+    - **Locked Tasks**: If 'is_locked' is True and 'comments' specifies a time (e.g. "at 5pm"), you MUST respect that intent (e.g. start_time=17).
+    - **Logic**: No overlaps. Respect duration.
+    
+    Output:
+    - Return a JSON object matching the WeeklySchedule schema.
+    - 'start_time' should be an integer hour (0-23).
     """
 
-    max_retries = 2
-    base_delay = 5
+    # Single shot orchestration as per plan (no retry loop for now)
+    try:
+        response = await client.aio.models.generate_content(
+            model='gemini-2.5-flash-lite',
+            contents=prompt,
+            config={
+                'response_mime_type': 'application/json',
+                'response_schema': WeeklySchedule
+            }
+        )
 
-    for attempt in range(max_retries):
-        try:
-            response = await client.aio.models.generate_content(
-                model='gemini-2.5-flash-lite',
-                contents=prompt,
-                config={
-                    'response_mime_type': 'application/json',
-                    'response_schema': WeeklySchedule
-                }
-            )
+        if response.parsed:
+            return response.parsed
+        
+        data = json.loads(response.text)
+        return WeeklySchedule(**data)
 
-            if response.parsed:
-                return response.parsed
-            
-            data = json.loads(response.text)
-            return WeeklySchedule(**data)
-
-        except Exception as e:
-            if "429" in str(e) or "ResourceExhausted" in str(e) or "quota" in str(e).lower():
-                if attempt < max_retries - 1:
-                    wait_time = base_delay * (2 ** attempt)
-                    print(f"Rate limit hit. Retrying in {wait_time}s...")
-                    await asyncio.sleep(wait_time)
-                    continue
-            print(f"Error during orchestration: {e}")
-            raise e
+    except Exception as e:
+        print(f"Error during orchestration: {e}")
+        # In a real app we might return an empty schedule or raise
+        raise e

@@ -399,3 +399,64 @@ h3 {
 .calendar-task:hover {
   filter: brightness(0.95);
 }
+
+/* Task Tooltip Styles (Fixed) */
+.task-tooltip-fixed {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  color: var(--text-primary);
+  padding: 1rem;
+  border-radius: 12px;
+  width: 240px;
+  pointer-events: none;
+  font-size: 0.85rem;
+  text-align: left;
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.task-tooltip-fixed strong {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: var(--color-primary);
+  font-size: 0.95rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.tooltip-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.25rem;
+  color: var(--text-secondary);
+}
+
+.tooltip-row span {
+  font-weight: 500;
+  margin-right: 0.5rem;
+  color: var(--text-primary);
+}
+
+/* Arrow indicator */
+.task-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -6px;
+  border-width: 6px;
+  border-style: solid;
+  border-color: rgba(255, 255, 255, 0.95) transparent transparent transparent;
+}

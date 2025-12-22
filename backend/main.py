@@ -6,6 +6,7 @@ import uvicorn
 import random
 from backend.interpreter import interpret_task as interpret_task_logic
 from backend.scheduler import orchestrate_schedule
+from backend.verifier import verify_schedule_algorithmic
 import backend.storage as storage
 
 app = FastAPI(title="AI Weekly Planner Backend") # Reload trigger
@@ -23,18 +24,26 @@ app.add_middleware(
 class TaskInput(BaseModel):
     raw_text: str
 
+# Updated Task model matching interpreter
 class Task(BaseModel):
     id: Any
-    title: str
-    duration_mins: int
+    name: str # Renamed from title
+    duration: int # Renamed from duration_mins to match interpreter
     status: str = "pending"
+    # New Fields
     tag: Optional[str] = "General"
+    location: Optional[str] = "Home" 
+    priority: Optional[str] = "Medium"
+    is_locked: bool = False
+    comments: Optional[str] = ""
+    # Scheduling fields
     scheduled_day: Optional[str] = None
     scheduled_hour: Optional[int] = None
 
 class Schedule(BaseModel):
     week_id: str
     tasks: List[Task]
+    warnings: List[str] = []
 
 class ChatMessage(BaseModel):
     sender: str
@@ -52,7 +61,17 @@ async def root():
 
 @app.get("/api/tasks", response_model=List[Task])
 async def get_tasks():
-    return storage.load_tasks()
+    # Helper to map old DB format if needed, though we should clear DB for fresh start ideally
+    raw_tasks = storage.load_tasks()
+    # Ensure they match the schema (e.g. rename title -> name if old data exists)
+    clean_tasks = []
+    for t in raw_tasks:
+        if "title" in t and "name" not in t:
+            t["name"] = t.pop("title")
+        if "duration_mins" in t and "duration" not in t:
+            t["duration"] = t.pop("duration_mins")
+        clean_tasks.append(t)
+    return clean_tasks
 
 @app.post("/api/tasks", response_model=Task)
 async def add_task(task: Task):
@@ -72,9 +91,14 @@ async def interpret_task(input: TaskInput):
     try:
         data = await interpret_task_logic(input.raw_text)
         return Task(
-            id=str(random.randint(1000, 9999)), # Temporary ID, frontend will likely replace or use this
-            title=data.task_name,
-            duration_mins=data.duration,
+            id=str(random.randint(1000, 9999)), 
+            name=data.name,
+            duration=data.duration,
+            tag=data.tag,
+            location=data.location,
+            priority=data.priority,
+            is_locked=data.is_locked,
+            comments=data.comments,
             status="interpreted"
         )
     except Exception as e:
@@ -85,12 +109,27 @@ async def generate_schedule(): # No payload needed, reads from DB
     """Real scheduler: calls Gemini to orchestrate tasks from DB."""
     try:
         # 1. Load tasks from DB
-        current_tasks = storage.load_tasks()
+        raw_tasks = storage.load_tasks()
+        
+        # Normalize keys for Orchestrator
+        current_tasks = []
+        for t in raw_tasks:
+             # Normalize for the scheduler input which expects specific keys or handles fallbacks
+             # Ensure 'name' and 'duration' exist
+             if "title" in t and "name" not in t: t["name"] = t["title"]
+             if "duration_mins" in t and "duration" not in t: t["duration"] = t["duration_mins"]
+             current_tasks.append(t)
+
         
         # 2. Orchestrate (only pending or all? Let's do all for now to re-optimize)
         orchestrated_result = await orchestrate_schedule(current_tasks)
         
-        # 3. Update tasks with schedule info
+        # 3. Verify
+        warnings = verify_schedule_algorithmic(orchestrated_result)
+        if warnings:
+            print("Scheduling Warnings:", warnings)
+        
+        # 4. Update tasks with schedule info
         scheduled_map = {str(item.task_id): item for item in orchestrated_result.schedule}
         
         updated_tasks = []
@@ -104,12 +143,13 @@ async def generate_schedule(): # No payload needed, reads from DB
                  t["status"] = "scheduled"
             updated_tasks.append(t)
             
-        # 4. Save back to DB
+        # 5. Save back to DB
         storage.save_tasks(updated_tasks)
 
         return Schedule(
             week_id="week-1",
-            tasks=updated_tasks
+            tasks=updated_tasks,
+            warnings=warnings
         )
     except Exception as e:
         print(f"Scheduling error: {e}")

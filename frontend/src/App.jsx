@@ -31,8 +31,8 @@ function App() {
     const newTask = {
       id: Date.now(), // Still generate temp ID or let backend do it? 
       // Backend expects ID. Let's send one.
-      title: task.title,
-      duration_mins: task.duration_mins,
+      name: task.name || task.title,
+      duration: task.duration || task.duration_mins,
       tag: 'New'
     };
 
@@ -54,8 +54,8 @@ function App() {
   const handleQuickAdd = async (task) => {
     const newTask = {
       id: Date.now(),
-      title: task.title,
-      duration_mins: task.duration_mins,
+      name: task.name || task.title,
+      duration: task.duration || task.duration_mins,
       tag: task.tag
     };
     try {
