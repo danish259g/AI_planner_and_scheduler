@@ -23,7 +23,7 @@ class OrchestratedTask(BaseModel):
 class WeeklySchedule(BaseModel):
     thought_process: List[str] = Field(description="Step-by-step reasoning. FIRST, list the available time slots. SECOND, go through each task and assign it a slot, explicitly checking for overlaps. THIRD, summarize the final plan.")
     schedule: List[OrchestratedTask]
-    logic_summary: str = Field(description="A brief explanation of how you solved the schedule, highlighting any compromises, bundles, or trade-offs made.")
+    logic_summary: str = Field(description="A brief (1-3 sentences) explanation of only the important remarks on how you solved the schedule, highlighting any compromises, bundles, or trade-offs made.")
 
 async def orchestrate_schedule(tasks: List[Dict[str, Any]], user_profile: str = "", user_feedback: str = None) -> WeeklySchedule:
     api_key = os.getenv("GEMINI_API_KEY")
@@ -93,28 +93,27 @@ async def orchestrate_schedule(tasks: List[Dict[str, Any]], user_profile: str = 
         # The goal is to build the optimal schedule from scratch.
         prompt = f"""
         You are an Expert AI Scheduler. 
-        Your goal is to build the PERFECT weekly schedule from scratch, with ZERO overlaps.
+        Your goal is to build the PERFECT weekly schedule from scratch.
 
         [USER VIBE & PREFERENCES]
         "{user_profile}"
-        *Use this to determine the best times for flexible tasks (e.g., "Deep Work" in mornings vs afternoons).*
 
         [INPUT TASKS]
         {task_list_str}
 
         [INSTRUCTIONS]
-        1. **Scratchpad Reasoning (CRITICAL)**: 
+        1. Your expertise is in scheduling while using logical thinking and assigning tasks in times and order that makes sense, like an intelligent human would.
+           - You don't just assign tasks to times, but you also consider the context of the tasks and the user's profile.
+           - you try and bundle similar tasks together to make the schedule more efficient.
+        2. Scratchpad Reasoning (CRITICAL): 
            - In the 'thought_process' list, you MUST mentally simulate the week hour-by-hour.
            - For each task, write: "Attempting [Task] at [Day] [Time]... Checking for overlap... [Result]"
-           - If an overlap is found, pick a new slot.
-        2. **Constraint Satisfaction**: 
+           - If an overlap is found, retry with a new slot.
+        3. Constraint Satisfaction: 
            - Respect 'is_locked' tasks exactly.
-           - Fit all other tasks into valid slots (Sun-Sat, 7-23 hours).
-           - **NO OVERLAPS ALLOWED**. Two tasks cannot share the same start_time on the same day.
-        3. **Optimization Strategy**:
-           - **Bundling**: Group errands.
-           - **Flow**: Logical sequence.
-        4. **Completeness**: Schedule EVERY task.
+           - Fit all other tasks into valid slots (Sun-Sat, 8-22 hours).
+           - NO OVERLAPS ALLOWED. Two tasks cannot interfere with each other (based on scheduled_start and scheduled_end).
+        4. Completeness: Schedule EVERY task.
 
         Output:
         - Return a JSON object matching the WeeklySchedule schema.

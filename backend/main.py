@@ -149,6 +149,17 @@ async def generate_schedule(): # No payload needed, reads from DB
         # 2. Orchestrate (only pending or all? Let's do all for now to re-optimize)
         orchestrated_result = await orchestrate_schedule(pending_tasks, user_profile)
         
+        # --- LOG THOUGHT PROCESS ---
+        log_path = Path(__file__).parent / 'scheduler_thoughts.txt'
+        with open(log_path, 'a', encoding='utf-8') as f:
+            f.write(f"\n\n--- Orchestration Run (Generate) ---\n")
+            if orchestrated_result.thought_process:
+                for step in orchestrated_result.thought_process:
+                    f.write(f"> {step}\n")
+            else:
+                f.write("(No thought process returned)\n")
+        # ---------------------------
+        
         # 3. Verify
         warnings = verify_schedule_algorithmic(orchestrated_result)
         if warnings:
@@ -206,6 +217,18 @@ async def negotiate_schedule(request: ChatRequest):
         
         # Call orchestration with user feedback
         orchestrated_result = await orchestrate_schedule(tasks, user_profile=user_profile, user_feedback=request.message)
+
+        # --- LOG THOUGHT PROCESS ---
+        log_path = Path(__file__).parent / 'scheduler_thoughts.txt'
+        with open(log_path, 'a', encoding='utf-8') as f:
+            f.write(f"\n\n--- Orchestration Run (Negotiate) ---\n")
+            f.write(f"User Feedback: {request.message}\n")
+            if orchestrated_result.thought_process:
+                for step in orchestrated_result.thought_process:
+                    f.write(f"> {step}\n")
+            else:
+                f.write("(No thought process returned)\n")
+        # ---------------------------
         
         # Verify
         warnings = verify_schedule_algorithmic(orchestrated_result)
