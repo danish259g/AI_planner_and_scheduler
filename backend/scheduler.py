@@ -14,29 +14,29 @@ except UnicodeDecodeError:
     load_dotenv(dotenv_path=env_path, encoding='utf-16')
 
 class OrchestratedTask(BaseModel):
-    task_id: Any = Field(description="The ID of the task being scheduled")
+    task_id: Any = Field(description="The ID of the event being scheduled")
     day: str = Field(description="Day of the week (Mon, Tue, Wed, Thu, Fri, Sat, Sun)")
     start_time: int = Field(description="Start hour (0-23)")
     duration_mins: int = Field(description="Duration in minutes")
     rationale: Optional[str] = Field(description="Brief reason for this slot (e.g. 'Bundled with other errands', 'High energy morning slot')")
 
 class WeeklySchedule(BaseModel):
-    thought_process: List[str] = Field(description="Step-by-step reasoning. FIRST, list the available time slots. SECOND, go through each task and assign it a slot, explicitly checking for overlaps. THIRD, summarize the final plan.")
+    thought_process: List[str] = Field(description="Step-by-step reasoning. FIRST, list the available time slots. SECOND, go through each event and assign it a slot, explicitly checking for overlaps. THIRD, summarize the final plan.")
     schedule: List[OrchestratedTask]
     logic_summary: str = Field(description="A brief (1-3 sentences) explanation of only the important remarks on how you solved the schedule, highlighting any compromises, bundles, or trade-offs made.")
 
-async def orchestrate_schedule(tasks: List[Dict[str, Any]], user_profile: str = "", user_feedback: str = None) -> WeeklySchedule:
+async def orchestrate_schedule(events: List[Dict[str, Any]], user_profile: str = "", user_feedback: str = None) -> WeeklySchedule:
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
         raise ValueError("GEMINI_API_KEY not found in environment variables")
 
     client = genai.Client(api_key=api_key)
 
-    # Convert tasks to a cleaner format for the LLM
+    # Convert events to a cleaner format for the LLM
     # We strip out implementation details and send the rich semantic fields
-    clean_tasks = []
-    for t in tasks:
-        clean_tasks.append({
+    clean_events = []
+    for t in events:
+        clean_events.append({
             "id": t["id"],
             "name": t.get("name"),
             "duration": t.get("duration"),
@@ -52,7 +52,7 @@ async def orchestrate_schedule(tasks: List[Dict[str, Any]], user_profile: str = 
             "current_end": t.get("scheduled_end")
         })
 
-    task_list_str = json.dumps(clean_tasks, indent=2)
+    task_list_str = json.dumps(clean_events, indent=2)
 
     
     # --- PROMPT ENGINEERING ---
@@ -72,15 +72,15 @@ async def orchestrate_schedule(tasks: List[Dict[str, Any]], user_profile: str = 
         [USER VIBE]
         "{user_profile}"
 
-        [TASKS & CURRENT STATE]
+        [events & CURRENT STATE]
         {task_list_str}
 
         [INSTRUCTIONS]
         1. **Scratchpad Reasoning**: Use the 'thought_process' field to:
-           - Identify the task to move.
-           - Check the target slot for existing tasks.
-           - If occupied, determine where to move the displaced task.
-           - Verify no 2 tasks occupy the same hour.
+           - Identify the event to move.
+           - Check the target slot for existing events.
+           - If occupied, determine where to move the displaced event.
+           - Verify no 2 events occupy the same hour.
         2. **Minimal Disruption**: ONLY change what is necessary.
         3. **Resolve Conflicts**: No overlaps allowed.
 
@@ -92,28 +92,31 @@ async def orchestrate_schedule(tasks: List[Dict[str, Any]], user_profile: str = 
         # 2. GENERATION MODE
         # The goal is to build the optimal schedule from scratch.
         prompt = f"""
-        You are an Expert AI Scheduler. 
-        Your goal is to build the PERFECT weekly schedule from scratch.
+        You are an AI Scheduler. 
+        Your goal is to build the BEST weekly schedule from scratch.
+        Your expertise is scheduling while using logical thinking and assigning events in times and order that makes sense, like an intelligent human would.
+           - You don't just assign events to available times, but you also consider the context of the event and the user's profile.
+           - you try and bundle similar events together to make the schedule more efficient.
 
         [USER VIBE & PREFERENCES]
         "{user_profile}"
 
-        [INPUT TASKS]
+        [INPUT events]
         {task_list_str}
 
         [INSTRUCTIONS]
-        1. Your expertise is in scheduling while using logical thinking and assigning tasks in times and order that makes sense, like an intelligent human would.
-           - You don't just assign tasks to times, but you also consider the context of the tasks and the user's profile.
-           - you try and bundle similar tasks together to make the schedule more efficient.
+        1. Order of work:
+           a. schedule the "locked" events to their defined timeframes
+           b. examine remaining open frames, and assign the remaining events
         2. Scratchpad Reasoning (CRITICAL): 
            - In the 'thought_process' list, you MUST mentally simulate the week hour-by-hour.
-           - For each task, write: "Attempting [Task] at [Day] [Time]... Checking for overlap... [Result]"
+           - For each event, write: "Attempting [event] at [Day] [Time]... Checking for overlap... [Result]"
            - If an overlap is found, retry with a new slot.
         3. Constraint Satisfaction: 
-           - Respect 'is_locked' tasks exactly.
-           - Fit all other tasks into valid slots (Sun-Sat, 8-22 hours).
-           - NO OVERLAPS ALLOWED. Two tasks cannot interfere with each other (based on scheduled_start and scheduled_end).
-        4. Completeness: Schedule EVERY task.
+           - Respect 'is_locked' events exactly.
+           - Fit all other events into valid slots (Sun-Sat, 8-22 hours).
+           - NO OVERLAPS ALLOWED. Two events cannot interfere with each other (based on scheduled_start and scheduled_end).
+        4. Completeness: Schedule EVERY event.
 
         Output:
         - Return a JSON object matching the WeeklySchedule schema.
