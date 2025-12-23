@@ -2,8 +2,8 @@ import React, { useEffect, useState } from 'react';
 
 export default function CalendarView({ tasks, onTaskMove }) {
     const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    const startHour = 8;
-    const endHour = 20; // Shortened for clearer view
+    const startHour = 7;
+    const endHour = 23; // 7am to 11pm
     const hours = Array.from({ length: endHour - startHour + 1 }, (_, i) => startHour + i);
 
     const getTasksForSlot = (day, hour) => {

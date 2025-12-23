@@ -21,6 +21,7 @@ class OrchestratedTask(BaseModel):
     rationale: Optional[str] = Field(description="Brief reason for this slot (e.g. 'Bundled with other errands', 'High energy morning slot')")
 
 class WeeklySchedule(BaseModel):
+    thought_process: List[str] = Field(description="Step-by-step reasoning. FIRST, list the available time slots. SECOND, go through each task and assign it a slot, explicitly checking for overlaps. THIRD, summarize the final plan.")
     schedule: List[OrchestratedTask]
     logic_summary: str = Field(description="A brief explanation of how you solved the schedule, highlighting any compromises, bundles, or trade-offs made.")
 
@@ -53,29 +54,72 @@ async def orchestrate_schedule(tasks: List[Dict[str, Any]], user_profile: str = 
 
     task_list_str = json.dumps(clean_tasks, indent=2)
 
-    prompt = f"""
-    You are an expert AI Scheduler. Your goal is to create an optimal weekly schedule for the user.
     
-    [USER VIBE & PREFERENCES]
-    The user has a specific working style and set of preferences. You MUST respect these as soft constraints.
-    Maximize the user's satisfaction by aligning the schedule with this "Vibe":
-    "{user_profile}"
-    
-    [INPUT TASKS]
-    {task_list_str}
+    # --- PROMPT ENGINEERING ---
 
+    if user_feedback:
+        # 1. ADJUSTMENT MODE
+        # The goal is to modify the existing schedule based on feedback, minimizing disruption.
+        prompt = f"""
+        You are an Intelligent Schedule Adjuster.
+        
+        [CONTEXT]
+        The user has an existing schedule. They have provided specific FEEDBACK to change it.
+        
+        [USER FEEDBACK]
+        "{user_feedback}"
+        
+        [USER VIBE]
+        "{user_profile}"
 
-    Instruction:
-    - If User Feedback is provided, modify the current schedule to satisfy the request.
-    - Keep other tasks in their current slots if possible to maintain stability, unless they need to move to accommodate the request.
-    
-    Output:
-    - Return a JSON object matching the WeeklySchedule schema.
-    - 'start_time' should be an integer hour (0-23).
-    - **logic_summary**: Be extremely concise. Only mention key trade-offs or bundles if absolutely necessary. If the schedule is straightforward, just say "Schedule updated." or "Optimized for flow." (Max 1 short sentence).
-    """
+        [TASKS & CURRENT STATE]
+        {task_list_str}
 
-    # Single shot orchestration as per plan (no retry loop for now)
+        [INSTRUCTIONS]
+        1. **Scratchpad Reasoning**: Use the 'thought_process' field to:
+           - Identify the task to move.
+           - Check the target slot for existing tasks.
+           - If occupied, determine where to move the displaced task.
+           - Verify no 2 tasks occupy the same hour.
+        2. **Minimal Disruption**: ONLY change what is necessary.
+        3. **Resolve Conflicts**: No overlaps allowed.
+
+        Output:
+        - Return a JSON object matching the WeeklySchedule schema.
+        - **logic_summary**: Explicitly state what changed.
+        """
+    else:
+        # 2. GENERATION MODE
+        # The goal is to build the optimal schedule from scratch.
+        prompt = f"""
+        You are an Expert AI Scheduler. 
+        Your goal is to build the PERFECT weekly schedule from scratch, with ZERO overlaps.
+
+        [USER VIBE & PREFERENCES]
+        "{user_profile}"
+        *Use this to determine the best times for flexible tasks (e.g., "Deep Work" in mornings vs afternoons).*
+
+        [INPUT TASKS]
+        {task_list_str}
+
+        [INSTRUCTIONS]
+        1. **Scratchpad Reasoning (CRITICAL)**: 
+           - In the 'thought_process' list, you MUST mentally simulate the week hour-by-hour.
+           - For each task, write: "Attempting [Task] at [Day] [Time]... Checking for overlap... [Result]"
+           - If an overlap is found, pick a new slot.
+        2. **Constraint Satisfaction**: 
+           - Respect 'is_locked' tasks exactly.
+           - Fit all other tasks into valid slots (Sun-Sat, 7-23 hours).
+           - **NO OVERLAPS ALLOWED**. Two tasks cannot share the same start_time on the same day.
+        3. **Optimization Strategy**:
+           - **Bundling**: Group errands.
+           - **Flow**: Logical sequence.
+        4. **Completeness**: Schedule EVERY task.
+
+        Output:
+        - Return a JSON object matching the WeeklySchedule schema.
+        """
+
     # Single shot execution (No retries)
     try:
         response = await client.aio.models.generate_content(

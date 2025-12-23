@@ -98,7 +98,7 @@ async def interpret_task(input: TaskInput):
     """Real interpreter using Gemini."""
     try:
         data = await interpret_task_logic(input.raw_text)
-        return Task(
+        new_task = Task(
             id=str(random.randint(1000, 9999)), 
             name=data.name,
             duration=data.duration,
@@ -112,6 +112,11 @@ async def interpret_task(input: TaskInput):
             comments=data.comments,
             status="interpreted"
         )
+        
+        # Save to DB immediately so it shows up in the UI/Task Bank
+        storage.add_task(new_task.dict())
+        
+        return new_task
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
