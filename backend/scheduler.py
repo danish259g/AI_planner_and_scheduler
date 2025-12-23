@@ -62,7 +62,10 @@ async def orchestrate_schedule(events: List[Dict[str, Any]], user_profile: str =
         # The goal is to modify the existing schedule based on feedback, minimizing disruption.
         prompt = f"""
         You are an Intelligent Schedule Adjuster.
-        
+        Your expertise is scheduling while using logical thinking and assigning events in times and order that makes sense, like an intelligent human would.
+           - You don't just assign events to available times, but you also consider the context of the event and the user's profile.
+           - you try and bundle similar events together to make the schedule more efficient.
+
         [CONTEXT]
         The user has an existing schedule. They have provided specific FEEDBACK to change it.
         
@@ -77,16 +80,20 @@ async def orchestrate_schedule(events: List[Dict[str, Any]], user_profile: str =
 
         [INSTRUCTIONS]
         1. **Scratchpad Reasoning**: Use the 'thought_process' field to:
-           - Identify the event to move.
+           - Identify the event/s to move.
            - Check the target slot for existing events.
            - If occupied, determine where to move the displaced event.
            - Verify no 2 events occupy the same hour.
-        2. **Minimal Disruption**: ONLY change what is necessary.
-        3. **Resolve Conflicts**: No overlaps allowed.
+        2. Minimal Disruption: ONLY change what is necessary.
+        3. Resolve Conflicts: No overlaps allowed.
+
+        [LAST STEP BEFORE YOUR OUTPUT DELIVERY]
+        Review the schedule you've assigned, and make sure NO OVERLAPS exist. 
+        If there are any, fix them according to above instructions.
 
         Output:
         - Return a JSON object matching the WeeklySchedule schema.
-        - **logic_summary**: Explicitly state what changed.
+        - logic_summary: Explicitly state what changed.
         """
     else:
         # 2. GENERATION MODE
@@ -118,6 +125,10 @@ async def orchestrate_schedule(events: List[Dict[str, Any]], user_profile: str =
            - NO OVERLAPS ALLOWED. Two events cannot interfere with each other (based on scheduled_start and scheduled_end).
         4. Completeness: Schedule EVERY event.
 
+        [LAST STEP BEFORE YOUR OUTPUT DELIVERY]
+        Review the schedule you've assigned, and make sure NO OVERLAPS exist. 
+        If there are any, fix them according to above instructions.
+        
         Output:
         - Return a JSON object matching the WeeklySchedule schema.
         """

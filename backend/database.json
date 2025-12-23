@@ -8,48 +8,14 @@
       "tag": "Study",
       "location": "University",
       "priority": "High",
-      "is_locked": false,
-      "day": "Mon",
-      "start_time": null,
-      "end_time": null,
-      "comments": "",
-      "scheduled_day": "Mon",
-      "scheduled_start": 8,
-      "scheduled_end": 15.0
-    },
-    {
-      "id": 1766412262702,
-      "name": "gym",
-      "duration": 60,
-      "status": "scheduled",
-      "tag": "Health",
-      "location": "Gym",
-      "priority": "Medium",
       "is_locked": true,
       "day": "Mon",
-      "start_time": null,
-      "end_time": null,
+      "start_time": "09:00",
+      "end_time": "15:00",
       "comments": "",
       "scheduled_day": "Mon",
-      "scheduled_start": 15,
+      "scheduled_start": 9,
       "scheduled_end": 16.0
-    },
-    {
-      "id": 1766414847202,
-      "name": "Buy groceries",
-      "duration": 60,
-      "status": "scheduled",
-      "tag": "Errand",
-      "location": "Home",
-      "priority": "Medium",
-      "is_locked": false,
-      "day": null,
-      "start_time": null,
-      "end_time": null,
-      "comments": "",
-      "scheduled_day": "Sun",
-      "scheduled_start": 11,
-      "scheduled_end": 12.0
     },
     {
       "id": 1766410564023,
@@ -59,14 +25,14 @@
       "tag": "Study",
       "location": "University",
       "priority": "High",
-      "is_locked": false,
+      "is_locked": true,
       "day": "Tue",
-      "start_time": null,
-      "end_time": null,
+      "start_time": "09:00",
+      "end_time": "14:00",
       "comments": "",
       "scheduled_day": "Tue",
-      "scheduled_start": 8,
-      "scheduled_end": 15.0
+      "scheduled_start": 9,
+      "scheduled_end": 16.0
     },
     {
       "id": 1766148137139,
@@ -81,9 +47,9 @@
       "start_time": null,
       "end_time": null,
       "comments": "",
-      "scheduled_day": "Thu",
-      "scheduled_start": 17,
-      "scheduled_end": 19.0
+      "scheduled_day": "Mon",
+      "scheduled_start": 16,
+      "scheduled_end": 18.0
     },
     {
       "id": 1766148146290,
@@ -98,9 +64,9 @@
       "start_time": null,
       "end_time": null,
       "comments": "",
-      "scheduled_day": "Sun",
-      "scheduled_start": 13,
-      "scheduled_end": 13.25
+      "scheduled_day": "Thu",
+      "scheduled_start": 17,
+      "scheduled_end": 17.25
     },
     {
       "id": 1766420809749,
@@ -115,9 +81,9 @@
       "start_time": null,
       "end_time": null,
       "comments": "",
-      "scheduled_day": "Sun",
-      "scheduled_start": 12,
-      "scheduled_end": 13.0
+      "scheduled_day": "Wed",
+      "scheduled_start": 17,
+      "scheduled_end": 18.0
     },
     {
       "id": 1766148129255,
@@ -132,13 +98,13 @@
       "start_time": null,
       "end_time": null,
       "comments": "",
-      "scheduled_day": "Sun",
-      "scheduled_start": 13,
-      "scheduled_end": 13.75
+      "scheduled_day": "Tue",
+      "scheduled_start": 17,
+      "scheduled_end": 17.75
     },
     {
       "id": 1766410467189,
-      "name": "Get drinks with girlfriend",
+      "name": "Get drinks with friends",
       "duration": 60,
       "status": "scheduled",
       "tag": "Personal",
@@ -149,9 +115,9 @@
       "start_time": null,
       "end_time": null,
       "comments": "",
-      "scheduled_day": "Sun",
-      "scheduled_start": 14,
-      "scheduled_end": 15.0
+      "scheduled_day": "Thu",
+      "scheduled_start": 18,
+      "scheduled_end": 19.0
     },
     {
       "id": 1766412737851,
@@ -237,7 +203,92 @@
       "scheduled_day": "Thu",
       "scheduled_start": 9,
       "scheduled_end": 17.0
+    },
+    {
+      "id": 1766513882242,
+      "name": "do HW in marketing course",
+      "duration": 120,
+      "status": "scheduled",
+      "tag": "Study",
+      "location": "Home",
+      "priority": "Medium",
+      "is_locked": false,
+      "day": null,
+      "start_time": null,
+      "end_time": null,
+      "comments": "",
+      "scheduled_day": "Wed",
+      "scheduled_start": 18,
+      "scheduled_end": 20.0
+    },
+    {
+      "id": "8362",
+      "name": "Take dog on a long walk",
+      "duration": 60,
+      "status": "scheduled",
+      "tag": "Personal",
+      "location": "Home",
+      "priority": "Medium",
+      "is_locked": false,
+      "day": null,
+      "start_time": null,
+      "end_time": null,
+      "comments": "in the eve",
+      "scheduled_day": "Sun",
+      "scheduled_start": 11,
+      "scheduled_end": 12.0
+    },
+    {
+      "id": "7398",
+      "name": "Dinner Date",
+      "duration": 60,
+      "status": "scheduled",
+      "tag": "Personal",
+      "location": "Restaurant",
+      "priority": "Medium",
+      "is_locked": true,
+      "day": "Wed",
+      "start_time": "20:00",
+      "end_time": null,
+      "comments": "",
+      "scheduled_day": "Wed",
+      "scheduled_start": 20,
+      "scheduled_end": 21.0
+    },
+    {
+      "id": 1766516761219,
+      "name": "Buy groceries",
+      "duration": 60,
+      "status": "scheduled",
+      "tag": "Errand",
+      "location": "Home",
+      "priority": "Medium",
+      "is_locked": false,
+      "day": null,
+      "start_time": null,
+      "end_time": null,
+      "comments": "",
+      "scheduled_day": "Tue",
+      "scheduled_start": 18,
+      "scheduled_end": 19.0
+    },
+    {
+      "id": 1766412262702,
+      "name": "gym",
+      "duration": 60,
+      "status": "scheduled",
+      "tag": "Health",
+      "location": "Gym",
+      "priority": "Medium",
+      "is_locked": true,
+      "day": "Mon",
+      "start_time": null,
+      "end_time": null,
+      "comments": "",
+      "scheduled_day": "Sun",
+      "scheduled_start": 15.0,
+      "scheduled_end": 16.0
     }
   ],
-  "user_profile": "Fri and Sat are rest days"
+  "user_profile": "Sat and Fri are rest days"
 }

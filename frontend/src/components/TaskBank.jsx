@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 
 export default function TaskBank({ tasks, onDeleteTask, onOrchestrate }) {
-    const [tooltip, setTooltip] = useState({ visible: false, task: null, x: 0, y: 0 });
+    const [tooltip, setTooltip] = useState({ visible: false, task: null, style: {} });
+    const timerRef = React.useRef(null);
 
     const handleDragStart = (e, id) => {
         // In a real app, set drag data
@@ -10,15 +11,39 @@ export default function TaskBank({ tasks, onDeleteTask, onOrchestrate }) {
 
     const handleMouseEnter = (e, task) => {
         const rect = e.currentTarget.getBoundingClientRect();
-        setTooltip({
-            visible: true,
-            task: task,
-            x: rect.right + 10, // Position to the right of the task
-            y: rect.top
-        });
+        // Clear any existing timer just in case
+        if (timerRef.current) clearTimeout(timerRef.current);
+
+        const viewportHeight = window.innerHeight;
+        const spaceBelow = viewportHeight - rect.bottom;
+
+        let newStyle = {
+            left: rect.right + 10,
+            top: rect.top
+        };
+
+        // Smart flip: if less than 350px below, flip to bottom alignment
+        if (spaceBelow < 350) {
+            newStyle = {
+                left: rect.right + 10,
+                bottom: viewportHeight - rect.bottom
+            };
+        }
+
+        timerRef.current = setTimeout(() => {
+            setTooltip({
+                visible: true,
+                task: task,
+                style: newStyle
+            });
+        }, 500); // 500ms delay
     };
 
     const handleMouseLeave = () => {
+        if (timerRef.current) {
+            clearTimeout(timerRef.current);
+            timerRef.current = null;
+        }
         setTooltip({ ...tooltip, visible: false });
     };
 
@@ -65,9 +90,8 @@ export default function TaskBank({ tasks, onDeleteTask, onOrchestrate }) {
                     className="task-tooltip-fixed"
                     style={{
                         position: 'fixed',
-                        left: tooltip.x,
-                        top: tooltip.y,
-                        zIndex: 9999
+                        zIndex: 9999,
+                        ...tooltip.style
                     }}
                 >
                     <strong>{tooltip.task.name || tooltip.task.title}</strong>

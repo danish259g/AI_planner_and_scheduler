@@ -90,35 +90,10 @@ function App() {
   };
 
   const handleTaskInterpreted = async (task) => {
-    // Optimistic or wait? We wait as per plan.
-    const newTask = {
-      id: Date.now(), // Still generate temp ID or let backend do it? 
-      // Backend expects ID. Let's send one.
-      name: task.name || task.title,
-      duration: task.duration || task.duration_mins,
-      tag: task.tag || 'General',
-      location: task.location || 'Home',
-      priority: task.priority || 'Medium',
-      is_locked: task.is_locked || false,
-      day: task.day,
-      start_time: task.start_time,
-      end_time: task.end_time,
-      comments: task.comments || ''
-    };
-
-    try {
-      const res = await fetch('http://127.0.0.1:8000/api/tasks', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newTask)
-      });
-      if (res.ok) {
-        const savedTask = await res.json();
-        setTasks(prev => [...prev, savedTask]);
-      }
-    } catch (err) {
-      console.error("Failed to add task", err);
-    }
+    // The backend's /api/interpret ALREADY saved the task to DB and returned the full object with ID.
+    // So we just update the UI state directly. No need to POST again.
+    console.log("Adding interpreted task from backend:", task);
+    setTasks(prev => [...prev, task]);
   };
 
   const handleQuickAdd = async (task) => {
