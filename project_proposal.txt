@@ -1,64 +1,65 @@
-AI Weekly Planner & Scheduler – Revised Project Proposal
-1. Problem & Motivation
-Current digital planners (e.g., Google Calendar, Todoist) function primarily as "storage bins" for events. While they handle fixed "anchors" (like meetings) well, they fail to manage the "long tail" of daily life—the dozens of floating tasks, loose routines, and errands that clutter a user's mind (e.g., "call the bank," "go for a run," "buy groceries").
+# Project Context: Psychometric AI Coach
 
-The Granularity Gap: Users are forced to manually solve the "constraint satisfaction problem" of fitting these floating tasks into limited time slots. This creates a high cognitive load.
+## 1. Project Identity
+The **Psychometric AI Coach** is a specialized agentic planning system designed to help students prepare for the Psychometric Entrance Test. Unlike generic planners, it has deep domain knowledge of specific study tasks (Geometry, Analogies, English Vocabulary, etc.) and optimizes schedules based on cognitive load and learning best practices.
 
-The Result: Users either create unrealistic "wish list" plans that fail immediately or abandon planning entirely for small tasks, leading to stress and low follow-through.
+## 2. Core Architecture
+The system follows a stateful **Interpreter -> Scheduler -> Verifier** pipeline, backed by a persistent JSON database.
 
-Goal: Shift from simple time tracking to Intelligent Time Orchestration. Our system automates the creation of "Implementation Intentions" (defining exactly when and where a task will happen), significantly reducing the mental burden of daily logistics.
+### A. The Interpreter (`interpreter.py`)
+- **Role**: Semantic Extraction & Normalization.
+- **Function**: Converts natural language input into structured JSON.
+- **Strict Logic**:
+  - Maps user intent *strictly* to the `TASK_CATALOG`.
+  - **Progressive Naming**: Appends numbers to base names (e.g., "Do geometry ch 5" -> `Geometry 5`).
+  - **Prefixing**: Adds language prefixes (e.g., `ENG Vocabulary 1`) as defined in the catalog.
+  - **Tagging**: Automatically assigns tags (Quantitative, Verbal, English) based on the canonical task name.
 
-2. System Objectives
+### B. The Scheduler (`scheduler.py`)
+- **Role**: Strategic Time Orchestration.
+- **Function**: Places "Floating Tasks" into "Empty Slots" around "Locked Anchors".
+- **Intelligence**:
+  - **The 3-Hour Rule**: Never schedules >3 hours of the same subject (e.g., Math) consecutively to prevent burnout.
+  - **Peak Performance**: Prioritizes "Simulations" (3+ hours) for morning slots.
+  - **Hard Constraints**: Respects `is_locked` flags and start/end times absolutely.
 
-Stateful Intelligent Scheduling: The system will manage the full lifecycle of a task—from a vague idea in a "Task Bank" to a scheduled block in the calendar—by intelligently placing tasks based on constraints, context, and priority.
+### C. The Verifier (`verifier.py`)
+- **Role**: Algorithmic & Logical Safety.
+- **Function**: Detects overlaps, invalid times, or missing fields before saving to the DB.
 
-Trust-Based Verification: Unlike raw LLM outputs which can hallucinate time slots, our system ensures schedule validity through a dedicated verification layer, guaranteeing no overlaps or mathematical errors.
+## 3. Data & State (`database.json`)
+- **Single Source of Truth**: The frontend reads *only* from this file via the API.
+- **Task Schema**:
+  - `id`: Timestamp or Unique Int.
+  - `name`: Strict Canonical Name (e.g., "Geometry 1").
+  - `tag`: Driven by `task_catalog.py` (e.g., "Quantitative").
+  - `status`: `pending` (in bank) or `scheduled` (on calendar).
+  - `scheduled_day/start/end`: populated only if `status == "scheduled"`.
 
-Collaborative Negotiation: The system supports a mixed-initiative interaction model. The AI acts as a "Proposer," allowing the user to negotiate ("Tuesday is too heavy," "Lock this gym session") to refine the plan.
+## 4. Design System & UI
+A strict, unified design system ensures consistency across the React Frontend.
 
-3. Existing Technology & Theoretical Review
-Traditional Tools (Google Calendar/Outlook): These are passive tools. They require the user to manually determine the duration and specific slot for every single task. They lack "Task Bundling" logic (e.g., grouping errands by location).
+### Color Coding (CSS Variables in `index.css`)
+All components (`TaskBank.jsx`, `CalendarView.jsx`) MUST use these variables:
+- 🔴 **Quantitative**: `--tag-bg-quantitative` / `--tag-border-quantitative` (Red)
+- 🟡 **Verbal**: `--tag-bg-verbal` / `--tag-border-verbal` (Gold/Yellow)
+- 🔵 **English**: `--tag-bg-english` / `--tag-border-english` (Blue)
+- 🟣 **Simulation**: `--tag-bg-simulation` / `--tag-border-simulation` (Purple)
+- 🟢 **Essay**: `--tag-bg-essay` / `--tag-border-essay` (Green)
+- ⚓ **Class**: `--tag-bg-class` / `--tag-border-class` (Navy)
 
+### Task Bank
+- **Logic**: Displays *only* tasks with `status != "scheduled"`.
+- **Empty State**: Explicit "Building your bank..." message if no pending tasks exist.
 
-Generative AI (ChatGPT/Claude): While capable of generating a text-based schedule, raw LLMs are stateless and prone to hallucination. They cannot reliably maintain a user's long-term constraints (e.g., "I never work Friday afternoons") across sessions, nor can they guarantee mathematically valid time-blocking (often scheduling 90 minutes of work in a 60-minute slot).
+### Calendar View
+- **Logic**: Displays *only* tasks with `status == "scheduled"`.
+- **Format**: Expects 3-letter day codes (`Mon`, `Tue`) to match column headers.
 
-Our Approach: We bridge this gap by building a Stateful Agentic System. We combine the semantic understanding of LLMs with a rigid verification architecture to provide the flexibility of a chat assistant with the reliability of a calendar algorithm.
+## 5. Typical Workflows for Agents
+- **Adding a Feature**: Always update `task_catalog.py` first if it involves new task types.
+- **Fixing Scheduling**: Check `scheduler.py` prompt heuristics.
+- **UI Tweaks**: Respect `index.css` variables; do not hardcode hex values.
+- **Debugging**: If tasks vanish, check `database.json` for `status` vs. `scheduled_day` mismatches.
 
-4. Approach (Intelligence Design)
-To solve the "Hallucination" and "Complexity" challenges, our system utilizes a 3-Stage Agentic Pipeline:
-
-Component A: The Interpreter (Semantic Extraction Agent)
-
-Users input tasks via natural language or a structured form.
-
-The LLM agent acts as a "Data Cleaner," inferring missing metadata using common sense.
-
-Input: "Buy groceries."
-
-Inference: Duration ~60 mins; Context: "Errand"; Location: "Supermarket".
-
-This removes the "Data Entry Burden" from the user while ensuring the scheduler has structured JSON data.
-
-Component B: The Scheduler (Generator Agent)
-
-This agent receives the user’s "Fixed Anchors" (work hours, appointments) and the "Floating Tasks" from the Interpreter.
-
-It solves the puzzle: placing floaters into empty slots, optimizing for logic like Task Bundling (grouping location-based tasks) and Energy Flow (spreading high-focus tasks).
-
-Component C: The Hybrid Verifier (The "Critic")
-
-To address the reliability/trust issue, we implement a Generator-Verifier architecture:
-
-Hard Constraint Check (Algorithmic): A code-based layer checks for mathematical errors (e.g., double bookings, time travel).
-
-Soft Constraint Check (LLM Critic): A separate LLM prompt reviews the plan for human realism (e.g., "Is it realistic to schedule a gym session at 11 PM?").
-
-If the Verifier detects issues, it loops back to the Scheduler to regenerate the plan before showing it to the user.
-
-5. Human–AI Interaction
-The system is designed to be a "Co-pilot," not a "Black Box."
-
-Negotiation Loop: Users can converse with the plan. If the Verifier approves a schedule, the user can still reject it ("I'm too tired on Tuesday"). The system explains its logic ("I put the gym there to save time after work") and adjusts based on feedback.
-
-
-Locking Mechanism: Users can "lock" specific tasks in place, forcing the AI to re-plan around those immutable choices, preserving user agency.
+This document serves as the primary context for maintaining and extending the Psychometric AI Coach.

@@ -1,0 +1,64 @@
+Scheduler Remodeling Plan
+Goal Description
+Remodel the scheduling logic in 
+scheduler.py
+ to incorporate 6 theory-backed "Rules for an Optimal Daily Study Schedule". This involves updating the LLM prompt to prioritize these scientific laws using a mix of hard constraints (where applicable) and strong heuristics, and ensuring the necessary metadata (tags) is passed to the LLM.
+
+User Review Required
+IMPORTANT
+
+Constraint Implementation Strategy:
+
+Analytical Peak Law (1:30 PM for Fluid Intelligence) will be implemented as a Strong Heuristic rather than a Hard Constraint to avoid failures when multiple analytical tasks exist.
+Interleaving Law (Mix Subjects) remains a key Heuristic.
+Verbal Glucose Law (Vocab after meal) will assume "After Meal" means After 13:00.
+Morning Verbal Law (Essay/Reading Comp in Morning) will be a Strong Heuristic (Preferred < 12:00).
+Consolidation Law (Review/Vocab before sleep) will be a Strong Heuristic (Preferred > 20:00 or Last Slot).
+Proposed Changes
+Proposed Changes
+Backend
+[MODIFY] 
+scheduler.py
+Transition to Hybrid Architecture:
+
+Phase 1: LLM Strategic Sorting (The "Brain")
+
+Prompt: Instead of asking for exact times (start_time), ask the LLM to assign each task to a Time Block:
+MORNING (08:00 - 12:00) -> Best for "Morning Verbal" (Essay, Reading).
+ANALYTICAL_PEAK (12:00 - 15:00) -> Best for "Fluid Intelligence" (Quant, Logic).
+AFTERNOON (15:00 - 18:00) -> General study.
+EVENING (18:00 - 23:00) -> Best for "Consolidation" (Review, Vocab).
+Logic: The LLM focuses purely on the 6 Laws (Interleaving, Peak Law, etc.) to cluster tasks intelligently. It does NOT do time math.
+Phase 2: Algorithmic Placement (The "Clock")
+
+New Function resolve_schedule():
+Takes the LLM's "Buckets".
+Places Locked Tasks first (Fixed anchors).
+Iterates through each Day + Time Block.
+Places assigned tasks sequentially into the available minutes.
+Gap Filling: If a block overflows, it pushes to the next available slot or warns.
+Benefits:
+Solves "LLM Math Issue" (LLMs are bad at calculating 10:45 + 50min).
+Guarantees 0 overlaps (Algorithmic safety).
+Strictly adheres to the "Analytical Peak" by mapping the ANALYTICAL_PEAK bucket to 13:30.
+[MODIFY] 
+main.py
+Update 
+generate_schedule
+ to handle the two-step process.
+Verification Plan
+Automated Tests
+None (Visual Verification required for scheduling quality).
+Manual Verification
+Generate a Schedule:
+Populate the database (via task_catalog or manual add) with a mix of tasks:
+1 Geometry (Quant)
+1 Essay (Essay)
+1 Vocab (English)
+1 Critical Reasoning (Verbal)
+Run the scheduler (POST /api/schedule/generate).
+Verify Rules:
+Geometry or Critical Reasoning should be around 13:30.
+Essay should be in the Morning.
+Vocab should be either Afternoon or Evening (Consolidation).
+Subjects should be mixed (not all Qual one day).
