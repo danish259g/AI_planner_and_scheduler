@@ -210,3 +210,24 @@ User Feedback: sunday is to light of a day
 > Fri: Biking (8-9), Dinner with family (19-20.5). No overlaps.
 > Sat: Free.
 > Sun: Golfing (8-11), Take dog on a long walk (11-12). No overlaps.
+
+
+--- Orchestration Run (Generate) ---
+> Available time slots: Monday 8:00-22:00, Tuesday 8:00-22:00, Wednesday 8:00-22:00, Thursday 8:00-22:00, Friday 8:00-22:00, Saturday 8:00-22:00, Sunday 8:00-22:00.
+> Attempting Quantitative: Geometry Basics (id: 1001) at Monday 9:00... Checking for overlap... No overlap.
+> Attempting English: Vocabulary Unit 1 (id: 1002) at Monday 10:00... Checking for overlap... No overlap.
+> Attempting Verbal: Analogies Practice (id: 1003) at Monday 10:30... Checking for overlap... No overlap.
+> Attempting Essay Writing Task (id: 1005) at Monday 11:15... Checking for overlap... No overlap.
+> Attempting Full Psychometric Simulation #1 (id: 1004) at Tuesday 9:00... Checking for overlap... No overlap.
+
+
+--- Orchestration Run (Generate) ---
+> Anchor Locked: Placing locked task 2003 (Course Lesson 5) at Mon 17:00.
+> Place Simulations: Found Simulation task 2001 (Full Simulation 1). Looking for a morning slot. It's high priority and needs 200 minutes.
+> Attempting to schedule Full Simulation 1 (2001) for Tuesday morning starting at 08:00. This is a good morning slot on a day with fewer initial commitments.
+> Place High Priority Geometry 1 (1001) next. It's a weakness and high priority. Schedule it for Wednesday morning at 08:00 (60 mins).
+> Now scheduling ENG Vocabulary 1 (1002) for Thursday morning at 08:00 (30 mins) to spread out English tasks.
+> Next, Analogies 1 (1003) - Medium priority, 45 mins. Schedule for Thursday at 08:30, after Vocabulary.
+> Essay Writing 1 (2002) - Medium priority, 40 mins. Schedule for Friday morning at 08:00.
+> Reviewing all tasks: All tasks are scheduled. Checking for overlaps. Mon: 17:00-20:00 (2003). Tue: 08:00-11:20 (2001). Wed: 08:00-09:00 (1001). Thu: 08:00-08:30 (1002) and 08:30-09:15 (1003). Fri: 08:00-08:40 (2002). No overlaps found. All tasks are within valid hours. Subject mixing is generally good, with shorter tasks spaced out.
+> Final check on constraints and heuristics. Locked task is placed. No overlaps. Valid hours. Simulation is in the morning. Weakness (Geometry) is placed early. Vocab is spaced out. Subject mixing is maintained.

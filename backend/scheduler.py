@@ -59,78 +59,70 @@ async def orchestrate_schedule(events: List[Dict[str, Any]], user_profile: str =
 
     if user_feedback:
         # 1. ADJUSTMENT MODE
-        # The goal is to modify the existing schedule based on feedback, minimizing disruption.
         prompt = f"""
-        You are an Intelligent Schedule Adjuster.
-        Your expertise is scheduling while using logical thinking and assigning events in times and order that makes sense, like an intelligent human would.
-           - You don't just assign events to available times, but you also consider the context of the event and the user's profile.
-           - you try and bundle similar events together to make the schedule more efficient.
+        You are an **Expert Psychometric Tutor & Schedule Optimizer**.
+        The user has provided feedback to adjust their study plan.
 
-        [CONTEXT]
-        The user has an existing schedule. They have provided specific FEEDBACK to change it.
-        
         [USER FEEDBACK]
         "{user_feedback}"
         
-        [USER VIBE]
+        [USER PROFILE/NOTES]
         "{user_profile}"
 
-        [events & CURRENT STATE]
+        [CURRENT TASK LIST & SCHEDULE]
         {task_list_str}
 
-        [INSTRUCTIONS]
-        1. **Scratchpad Reasoning**: Use the 'thought_process' field to:
-           - Identify the event/s to move.
-           - Check the target slot for existing events.
-           - If occupied, determine where to move the displaced event.
-           - Verify no 2 events occupy the same hour.
-        2. Minimal Disruption: ONLY change what is necessary.
-        3. Resolve Conflicts: No overlaps allowed.
+        [GOAL]
+        Modify the schedule to address the feedback while maintaining a high-quality study structure.
 
-        [LAST STEP BEFORE YOUR OUTPUT DELIVERY]
-        Review the schedule you've assigned, and make sure NO OVERLAPS exist. 
-        If there are any, fix them according to above instructions.
+        [HARD CONSTRAINTS - VIOLATION = FAILURE]
+        1. **Locked Tasks**: Respect 'is_locked=True' tasks (keep day/time unless user explicitly asks to move them).
+        2. **No Overlaps**: Two tasks cannot occupy the same time slot.
+        3. **Valid Hours**: Schedule strictly between 08:00 and 23:00 unless a Locked task forces otherwise.
 
-        Output:
+        [HEURISTIC GUIDELINES - OPTIMIZE FOR THESE]
+        1. **Study Diversity (The 3-Hour Rule)**: Avoid scheduling the SAME Subject (Quantitative/Verbal/English) for more than 3 consecutive hours. Mix it up to keep the brain fresh.
+        2. **Peak Performance**: Place "Simulations" (duration > 180m) in the morning (start 08:00-10:00) if possible.
+        3. **Weakness Priority**: Treat 'High' priority tasks as must-haves for prime hours.
+        4. **Minimal Disruption**: When adjusting, try to keep other unrelated tasks stable.
+
+        [OUTPUT INSTRUCTIONS]
         - Return a JSON object matching the WeeklySchedule schema.
-        - logic_summary: Explicitly state what changed.
+        - **thought_process**: Explain which constraints you checked and how you optimized.
+        - **logic_summary**: Briefly tell the student what you changed and why.
         """
     else:
         # 2. GENERATION MODE
-        # The goal is to build the optimal schedule from scratch.
         prompt = f"""
-        You are an AI Scheduler. 
-        Your goal is to build the BEST weekly schedule from scratch.
-        Your expertise is scheduling while using logical thinking and assigning events in times and order that makes sense, like an intelligent human would.
-           - You don't just assign events to available times, but you also consider the context of the event and the user's profile.
-           - you try and bundle similar events together to make the schedule more efficient.
+        You are an **Expert Psychometric Tutor & Schedule Optimizer**.
+        Your goal is to build the OPTIMAL study plan for the week from these tasks.
 
-        [USER VIBE & PREFERENCES]
+        [USER PROFILE/NOTES]
         "{user_profile}"
 
-        [INPUT events]
+        [TASK LIST]
         {task_list_str}
 
-        [INSTRUCTIONS]
-        1. Order of work:
-           a. schedule the "locked" events to their defined timeframes
-           b. examine remaining open frames, and assign the remaining events
-        2. Scratchpad Reasoning (CRITICAL): 
-           - In the 'thought_process' list, you MUST mentally simulate the week hour-by-hour.
-           - For each event, write: "Attempting [event] at [Day] [Time]... Checking for overlap... [Result]"
-           - If an overlap is found, retry with a new slot.
-        3. Constraint Satisfaction: 
-           - Respect 'is_locked' events exactly.
-           - Fit all other events into valid slots (Sun-Sat, 8-22 hours).
-           - NO OVERLAPS ALLOWED. Two events cannot interfere with each other (based on scheduled_start and scheduled_end).
-        4. Completeness: Schedule EVERY event.
+        [HARD CONSTRAINTS - VIOLATION = FAILURE]
+        1. **Locked Tasks**: You MUST place 'is_locked=True' tasks at their specific 'day' and 'start_time'. Do this FIRST.
+        2. **No Overlaps**: No two tasks can overlap in time.
+        3. **Valid Hours**: Tasks must be scheduled between 08:00 and 23:00.
 
-        [LAST STEP BEFORE YOUR OUTPUT DELIVERY]
-        Review the schedule you've assigned, and make sure NO OVERLAPS exist. 
-        If there are any, fix them according to above instructions.
-        
-        Output:
+        [HEURISTIC GUIDELINES - OPTIMIZE FOR THESE]
+        1. **Subject Mixing (The 3-Hour Rule)**: Do not schedule > 3 hours of the *same* Subject (Quantitative, Verbal, English) consecutively. Alternate subjects to maximize retention.
+        2. **Simulation Blocks**: If a task is a "Simulation" (duration > 180m), prioritize placing it in the morning (e.g., starting 08:00 or 09:00) on a day with few other commitments.
+        3. **Vocab Spacing**: If there are multiple short "English" or "Vocab" tasks, spread them out across different days rather than bunching them.
+        4. **Weakness First**: Schedule 'High' priority tasks earlier in the day or week.
+
+        [STEP-BY-STEP REASONING "thought_process"]
+        1. **Anchor Locked**: "Placing locked task X at [Day] [Time]".
+        2. **Place Simulations**: "Found Simulation task X. Looking for a morning slot..."
+        3. **Fill Gaps**: "Iterating through remaining tasks... Attempting to place [Task Y] (Math) after [Task Z] (English) to mix subjects."
+        4. **Review**: "Checking for overlaps... All clear."
+
+        [OUTPUT]
         - Return a JSON object matching the WeeklySchedule schema.
+        - Ensure every single task from the input is assigned a valid 'day' and 'start_time'.
         """
 
     # Single shot execution (No retries)

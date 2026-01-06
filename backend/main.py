@@ -70,6 +70,7 @@ async def root():
 
 @app.get("/api/tasks", response_model=List[Task])
 async def get_tasks():
+    print("DEBUG: Fetching tasks from storage...")
     # Helper to map old DB format if needed, though we should clear DB for fresh start ideally
     raw_tasks = storage.load_tasks()
     # Ensure they match the schema (e.g. rename title -> name if old data exists)
@@ -137,18 +138,19 @@ async def generate_schedule(): # No payload needed, reads from DB
              if "duration_mins" in t and "duration" not in t: t["duration"] = t["duration_mins"]
              current_tasks.append(t)
 
-        # Filter for pending tasks
-        pending_tasks = [t for t in current_tasks if t.get("status") == "pending"]
-        if not pending_tasks:
-            # If no pending tasks, return current tasks as is
-            return Schedule(week_id="empty", tasks=current_tasks)
+        # Filter for pending tasks - REMOVED. We want to re-orchestrate the whole week.
+        # pending_tasks = [t for t in current_tasks if t.get("status") == "pending"]
+        # if not pending_tasks:
+        #     # If no pending tasks, return current tasks as is
+        #     return Schedule(week_id="empty", tasks=current_tasks)
 
         # Get User Profile
         user_profile = storage.get_user_profile()
         print(f"Orchestrating with User Profile: {user_profile}")
         
-        # 2. Orchestrate (only pending or all? Let's do all for now to re-optimize)
-        orchestrated_result = await orchestrate_schedule(pending_tasks, user_profile)
+        # 2. Orchestrate - Send ALL current tasks to allow re-optimization of the whole week
+        # The 'is_locked' flag will protect tasks that shouldn't move.
+        orchestrated_result = await orchestrate_schedule(current_tasks, user_profile)
         
         # --- LOG THOUGHT PROCESS ---
         log_path = Path(__file__).parent / 'scheduler_thoughts.txt'

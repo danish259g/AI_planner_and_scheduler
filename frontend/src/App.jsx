@@ -236,6 +236,7 @@ function App() {
     <div className="app-container">
       {/* LEFT COLUMN: Inputs & Assistant */}
       <section className="layout-sidebar">
+        <h1 style={{ fontSize: '1.5rem', margin: '0 0 1rem 0', color: 'var(--color-primary)' }}>🎓 Psychometric AI Coach</h1>
 
         {/* Add Task */}
         <div className="glass-panel">

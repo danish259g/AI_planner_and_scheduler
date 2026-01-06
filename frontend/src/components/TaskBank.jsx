@@ -47,32 +47,62 @@ export default function TaskBank({ tasks, onDeleteTask, onOrchestrate }) {
         setTooltip({ ...tooltip, visible: false });
     };
 
+    const getTaskStyle = (tag) => {
+        const t = (tag || '').toLowerCase();
+        let style = { borderLeft: '4px solid', background: '' };
+
+        if (t.includes('class') || t.includes('course') || t.includes('lesson')) {
+            style.borderColor = 'var(--tag-border-class)'; style.background = 'var(--tag-bg-class)';
+        } else if (t.includes('quant') || t.includes('math') || t.includes('geometry') || t.includes('algebra')) {
+            style.borderColor = 'var(--tag-border-quantitative)'; style.background = 'var(--tag-bg-quantitative)';
+        } else if (t.includes('verbal') || t.includes('analogies') || t.includes('critical')) {
+            style.borderColor = 'var(--tag-border-verbal)'; style.background = 'var(--tag-bg-verbal)';
+        } else if (t.includes('english') || t.includes('vocab')) {
+            style.borderColor = 'var(--tag-border-english)'; style.background = 'var(--tag-bg-english)';
+        } else if (t.includes('sim')) {
+            style.borderColor = 'var(--tag-border-simulation)'; style.background = 'var(--tag-bg-simulation)';
+        } else if (t.includes('essay')) {
+            style.borderColor = 'var(--tag-border-essay)'; style.background = 'var(--tag-bg-essay)';
+        } else {
+            style.borderColor = 'var(--tag-border-general)'; style.background = 'var(--tag-bg-general)';
+        }
+        return style;
+    };
+
     return (
         <div className="task-bank-content">
             <div className="task-grid">
-                {tasks.map(task => (
-                    <div
-                        key={task.id}
-                        className="task-chip"
-                        draggable
-                        onDragStart={(e) => handleDragStart(e, task.id)}
-                        onMouseEnter={(e) => handleMouseEnter(e, task)}
-                        onMouseLeave={handleMouseLeave}
-                    >
-                        <span className="task-chip-title">{task.name || task.title}</span>
-                        <span className="task-chip-time">{task.duration || task.duration_mins}m</span>
-
-                        <button
-                            className="chip-delete-btn"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                onDeleteTask(task.id);
-                            }}
-                        >
-                            ×
-                        </button>
+                {tasks.filter(t => t.status !== 'scheduled').length === 0 ? (
+                    <div style={{ padding: '20px', textAlign: 'center', color: '#888', fontStyle: 'italic', width: '100%' }}>
+                        Building your bank...<br />
+                        (or everything is planned! 🎉)
                     </div>
-                ))}
+                ) : (
+                    tasks.filter(t => t.status !== 'scheduled').map(task => (
+                        <div
+                            key={task.id}
+                            className="task-chip"
+                            draggable
+                            onDragStart={(e) => handleDragStart(e, task.id)}
+                            onMouseEnter={(e) => handleMouseEnter(e, task)}
+                            onMouseLeave={handleMouseLeave}
+                            style={getTaskStyle(task.tag)}
+                        >
+                            <span className="task-chip-title">{task.name || task.title}</span>
+                            <span className="task-chip-time">{task.duration || task.duration_mins}m</span>
+
+                            <button
+                                className="chip-delete-btn"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onDeleteTask(task.id);
+                                }}
+                            >
+                                ×
+                            </button>
+                        </div>
+                    ))
+                )}
             </div>
 
             <div className="orchestrate-container">

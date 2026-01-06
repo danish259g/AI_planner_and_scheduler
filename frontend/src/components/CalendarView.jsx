@@ -12,28 +12,17 @@ export default function CalendarView({ tasks, onTaskMove }) {
         return tasks.filter(t => t.scheduled_day === day && Math.floor(t.scheduled_start) === hour);
     };
 
-    const getTagColor = (tag) => {
-        const colors = {
-            'Work': '#e3f2fd', // Light Blue
-            'Personal': '#e8f5e9', // Light Green
-            'Health': '#ffebee', // Light Red
-            'Study': '#f3e5f5', // Light Purple
-            'Errand': '#fff3e0', // Light Orange
-            'Home': '#f5f5f5'    // Grey
-        };
-        return colors[tag] || '#e3f2fd'; // Default to blue-ish
-    };
+    const getTaskStyle = (tag) => {
+        const t = (tag || '').toLowerCase();
 
-    const getTagBorderColor = (tag) => {
-        const colors = {
-            'Work': '#2196f3',
-            'Personal': '#4caf50',
-            'Health': '#f44336',
-            'Study': '#9c27b0',
-            'Errand': '#ff9800',
-            'Home': '#9e9e9e'
-        };
-        return colors[tag] || '#2196f3';
+        if (t.includes('class') || t.includes('course')) return { bg: 'var(--tag-bg-class)', border: 'var(--tag-border-class)' };
+        if (t.includes('quant') || t.includes('math') || t.includes('geometry') || t.includes('algebra')) return { bg: 'var(--tag-bg-quantitative)', border: 'var(--tag-border-quantitative)' };
+        if (t.includes('verbal') || t.includes('analogies') || t.includes('critical')) return { bg: 'var(--tag-bg-verbal)', border: 'var(--tag-border-verbal)' };
+        if (t.includes('english') || t.includes('vocab')) return { bg: 'var(--tag-bg-english)', border: 'var(--tag-border-english)' };
+        if (t.includes('sim')) return { bg: 'var(--tag-bg-simulation)', border: 'var(--tag-border-simulation)' };
+        if (t.includes('essay')) return { bg: 'var(--tag-bg-essay)', border: 'var(--tag-border-essay)' };
+
+        return { bg: 'var(--tag-bg-general)', border: 'var(--tag-border-general)' };
     };
 
     const handleDragStart = (e, taskId) => {
@@ -86,6 +75,8 @@ export default function CalendarView({ tasks, onTaskMove }) {
                                     const heightRem = (duration / 60) * 3;
                                     const tag = task.tag || 'General';
 
+                                    const styleInfo = getTaskStyle(tag);
+
                                     return (
                                         <div
                                             key={task.id}
@@ -101,8 +92,8 @@ export default function CalendarView({ tasks, onTaskMove }) {
                                                 right: 0,
                                                 marginBottom: '1px',
                                                 zIndex: 10,
-                                                backgroundColor: getTagColor(tag),
-                                                borderLeft: `3px solid ${getTagBorderColor(tag)}`,
+                                                backgroundColor: styleInfo.bg,
+                                                borderLeft: `3px solid ${styleInfo.border}`,
                                                 color: '#333',
                                                 fontSize: '0.75rem',
                                                 padding: '2px 4px',
