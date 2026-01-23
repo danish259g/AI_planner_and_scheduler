@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-export default function TaskBank({ tasks, onDeleteTask, onOrchestrate }) {
+export default function TaskBank({ tasks, onDeleteTask, onOrchestrate, onTaskUpdate, isOrchestrating }) {
     const [tooltip, setTooltip] = useState({ visible: false, task: null, style: {} });
     const timerRef = React.useRef(null);
 
@@ -72,13 +72,13 @@ export default function TaskBank({ tasks, onDeleteTask, onOrchestrate }) {
     return (
         <div className="task-bank-content">
             <div className="task-grid">
-                {tasks.filter(t => t.status !== 'scheduled').length === 0 ? (
+                {tasks.filter(t => t.status !== 'scheduled' && t.status !== 'completed').length === 0 ? (
                     <div style={{ padding: '20px', textAlign: 'center', color: '#888', fontStyle: 'italic', width: '100%' }}>
                         Building your bank...<br />
                         (or everything is planned! 🎉)
                     </div>
                 ) : (
-                    tasks.filter(t => t.status !== 'scheduled').map(task => (
+                    tasks.filter(t => t.status !== 'scheduled' && t.status !== 'completed').map(task => (
                         <div
                             key={task.id}
                             className="task-chip"
@@ -90,6 +90,37 @@ export default function TaskBank({ tasks, onDeleteTask, onOrchestrate }) {
                         >
                             <span className="task-chip-title">{task.name || task.title}</span>
                             <span className="task-chip-time">{task.duration || task.duration_mins}m</span>
+
+                            <button
+                                className="chip-schedule-btn"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    const day = window.prompt("Enter Day (Sun, Mon, Tue, Wed, Thu, Fri, Sat):", "Sun");
+                                    if (!day) return;
+                                    const hour = window.prompt("Enter Start Hour (0-23):", "10");
+                                    if (!hour) return;
+
+                                    onTaskUpdate(task.id, {
+                                        scheduled_day: day,
+                                        scheduled_start: parseFloat(hour),
+                                        status: 'scheduled'
+                                    });
+                                }}
+                                title="Schedule in Calendar"
+                                style={{
+                                    background: 'var(--color-primary)',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '4px',
+                                    marginRight: '5px',
+                                    cursor: 'pointer',
+                                    padding: '0 5px',
+                                    fontSize: '12px',
+                                    fontWeight: 'bold'
+                                }}
+                            >
+                                +
+                            </button>
 
                             <button
                                 className="chip-delete-btn"
@@ -109,8 +140,14 @@ export default function TaskBank({ tasks, onDeleteTask, onOrchestrate }) {
                 <button
                     className="orchestrate-btn"
                     onClick={onOrchestrate}
+                    disabled={isOrchestrating}
+                    style={{
+                        opacity: isOrchestrating ? 0.7 : 1,
+                        cursor: isOrchestrating ? 'not-allowed' : 'pointer'
+                    }}
                 >
-                    <span className="sparkle">✨</span> Orchestrate Week
+                    <span className="sparkle">{isOrchestrating ? "⏳" : "✨"}</span>
+                    {isOrchestrating ? "Orchestrating..." : "Orchestrate Week"}
                 </button>
             </div>
 

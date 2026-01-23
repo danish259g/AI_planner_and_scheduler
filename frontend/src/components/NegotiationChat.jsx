@@ -2,6 +2,15 @@ import React, { useState } from 'react';
 
 export default function NegotiationChat({ messages, onSendMessage }) {
     const [input, setInput] = useState('');
+    const chatEndRef = React.useRef(null);
+
+    const scrollToBottom = () => {
+        chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    };
+
+    React.useEffect(() => {
+        scrollToBottom();
+    }, [messages]);
 
     const handleSend = () => {
         if (!input.trim()) return;
@@ -19,6 +28,7 @@ export default function NegotiationChat({ messages, onSendMessage }) {
                         </div>
                     </div>
                 ))}
+                <div ref={chatEndRef} />
             </div>
             <div className="chat-input-area">
                 <input
