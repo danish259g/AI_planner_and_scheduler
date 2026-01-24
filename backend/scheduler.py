@@ -9,232 +9,320 @@ from pathlib import Path
 import traceback
 import datetime
 
+from backend.optimizer import DailyBatchOptimizer, OptimizationTask, CognitiveType
+
 env_path = Path(__file__).parent / '.env'
 try:
     load_dotenv(dotenv_path=env_path)
 except UnicodeDecodeError:
     load_dotenv(dotenv_path=env_path, encoding='utf-16')
 
+# --- Models ---
+
 class OrchestratedTask(BaseModel):
     task_id: Any = Field(description="The ID of the event being scheduled")
     day: str = Field(description="Day of the week (Mon, Tue, Wed, Thu, Fri, Sat, Sun)")
     start_time: float = Field(description="Start hour (0-23). Use decimals for minutes, e.g., 14.5 = 14:30")
     duration_mins: int = Field(description="Duration in minutes")
-    rationale: Optional[str] = Field(description="Brief reason for this slot (e.g. 'Bundled with other errands', 'High energy morning slot')")
-
-    @validator('start_time', pre=True)
-    def parse_start_time(cls, v):
-        if isinstance(v, str):
-            # Handle "09:30" format
-            if ':' in v:
-                try:
-                    h, m = map(float, v.split(':'))
-                    return h + (m / 60)
-                except ValueError:
-                    pass
-            # Handle "9" or "9.5" string
-            try:
-                return float(v)
-            except ValueError:
-                pass
-        return v
+    rationale: Optional[str] = Field(description="Brief reason for this slot")
 
 class WeeklySchedule(BaseModel):
-    thought_process: List[str] = Field(description="CONCISE, bullet-point reasoning for the schedule. Do NOT explain every step. Only mention key trade-offs or constraints handled.")
+    thought_process: List[str] = Field(description="Reasoning steps")
     schedule: List[OrchestratedTask]
-    logic_summary: str = Field(description="A brief (1-3 sentences) explanation of only the important remarks on how you solved the schedule, highlighting any compromises, bundles, or trade-offs made.")
+    logic_summary: str = Field(description="Explanation of the schedule logic")
+    task_profiles: Dict[str, str] = Field(default={}, description="Map of Task ID to Cognitive Type")
 
-async def orchestrate_schedule(events: List[Dict[str, Any]], user_profile: str = "", user_feedback: str = None, performance_data: Dict[str, Any] = None, user_settings: Dict[str, Any] = None) -> WeeklySchedule:
+class TaskProfile(BaseModel):
+    task_id: str
+    cognitive_type: str = Field(description="Analytical, Creative, Memory, Review, or General")
+    reasoning: str
+
+class TaskProfileList(BaseModel):
+    profiles: List[TaskProfile]
+
+class DayAssignment(BaseModel):
+    task_id: str
+    day: str = Field(description="Mon, Tue, Wed, Thu, Fri, Sat, Sun")
+
+class WeekStrategy(BaseModel):
+    assignments: List[DayAssignment]
+    strategy_reasoning: str
+
+# --- Main Orchestrator ---
+
+async def orchestrate_schedule(
+    events: List[Dict[str, Any]], 
+    user_profile: str = "", 
+    user_feedback: str = None, 
+    performance_data: Dict[str, Any] = None, 
+    user_settings: Dict[str, Any] = None,
+    profile_update_callback: Optional[Any] = None # Async callback(profile_map)
+) -> WeeklySchedule:
+    # 0a. [PERFORMANCE BOOST]: Automatically boost priority for weak subjects
+    if performance_data:
+        for task in events:
+            tag = task.get("tag")
+            if tag and tag in performance_data:
+                # Store original priority just in case
+                # task["original_priority"] = task.get("priority")
+                
+                perf = performance_data[tag]
+                # If score is known (count > 0) and low (< 70)
+                if perf.get("count", 0) > 0 and perf.get("score", 0) < 70:
+                    print(f"Scheduler: Priority Boost for {task.get('name')} (Score: {perf.get('score')})")
+                    task["priority"] = "High"
+
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
-        raise ValueError("GEMINI_API_KEY not found in environment variables")
-
-    client = genai.Client(api_key=api_key)
-
-    perf_str = json.dumps(performance_data, indent=2) if performance_data else "No data yet."
-
-    # Convert events to a cleaner format for the LLM
-    # We strip out implementation details and send the rich semantic fields
-    clean_events = []
-    for t in events:
-        clean_events.append({
-            "id": str(t["id"]),
-            "name": t.get("name"),
-            "duration": t.get("duration"),
-            "priority": t.get("priority"),
-            "is_locked": t.get("is_locked"),
-            "day": t.get("day"), # Fixed day if locked
-            "start_time": t.get("start_time"), # Fixed time if locked
-            "end_time": t.get("end_time"),
-            "comments": t.get("comments", ""),
-            # Include current schedule state for context
-            "current_day": t.get("scheduled_day"),
-            "current_start": t.get("scheduled_start"),
-            "current_end": t.get("scheduled_end")
-        })
-
-    task_list_str = json.dumps(clean_events, indent=2)
-
+        raise ValueError("GEMINI_API_KEY not found")
     
-    # --- PROMPT ENGINEERING ---
-
-    if user_feedback:
-        # 1. ADJUSTMENT MODE
-        prompt = f"""
-        You are an **Expert Psychometric Tutor & Schedule Optimizer**.
-        The user has provided feedback to adjust their study plan.
-
-        [USER FEEDBACK]
-        "{user_feedback}"
-        
-        [USER PROFILE/NOTES]
-        "{user_profile}"
-
-        [CURRENT TASK LIST & SCHEDULE]
-        {task_list_str}
-
-        [STUDENT PERFORMANCE DATA]
-        {perf_str}
-
-        [GOAL]
-        Modify the schedule to address the feedback while maintaining a high-quality study structure.
-
-        [HARD CONSTRAINTS - VIOLATION = FAILURE]
-        1. **Locked Tasks**: Respect 'is_locked=True' tasks (keep day/time unless user explicitly asks to move them).
-        2. **STRICTLY NO OVERLAPS**: Two tasks cannot occupy the same time slot. If Task A is 10:00-11:00, Task B CANNOT start before 11:00.
-        3. **Valid Hours**: Schedule strictly between 08:00 and 23:00 unless a Locked task forces otherwise.
-        4. **Daily Capacity**: The total duration of study tasks assigned to any single day MUST NOT exceed {user_settings.get('max_daily_hours', 8)} hours.
-
-        [OVERFLOW PROTOCOL]
-        If you cannot fit all tasks without overlapping OR exceeding {user_settings.get('max_daily_hours', 8)} hours/day:
-        1. **DROP** lower priority tasks.
-        2. **DROP** tasks where the student's performance is already strong (High score).
-        3. **KEEP** tasks that address weaknesses or have 'High' priority.
-        4. Do NOT forcing tasks into the schedule if they don't fit. Omit them from the output.
-
-        [HEURISTIC GUIDELINES - OPTIMIZE FOR THESE]
-        1. **Peak Performance**: Respect Peak Energy Time: {user_settings.get('peak_energy', 'morning')}. Place intense tasks during this window if possible.
-        2. **Scheduling Style**: Respect {user_settings.get('scheduling_style', 'spread')} style. (Spread = even distribution, Batch = group subjects together).
-        3. **Study Diversity (The 3-Hour Rule)**: Avoid scheduling the SAME Subject (Quantitative/Verbal/English) for more than 3 consecutive hours. Mix it up to keep the brain fresh.
-        4. **Weakness Priority**: Treat 'High' priority tasks as must-haves for prime hours.
-        5. **Minimal Disruption**: When adjusting, try to keep other unrelated tasks stable.
-
-        [OUTPUT INSTRUCTIONS]
-        - Return a JSON object matching the WeeklySchedule schema.
-        - **thought_process**: Keep it extremely concise (3-5 bullet points max).
-        - **logic_summary**: Briefly tell the student what you changed and why.
-        """
-    else:
-        # 2. GENERATION MODE
-        prompt = f"""
-        You are an **Expert Psychometric Tutor & Schedule Optimizer**.
-        Your goal is to build the OPTIMAL study plan for the week from these tasks.
-
-        [USER PROFILE/NOTES]
-        "{user_profile}"
-
-        [USER SETTINGS & CONSTRAINTS]
-        Username/Profile: {user_settings.get('username', 'Student')}
-        Study Window: {user_settings.get('study_start', 8)}:00 to {user_settings.get('study_end', 22)}:00
-        Max Daily Study Hours: {user_settings.get('max_daily_hours', 8)} hours (DO NOT EXCEED THIS PER DAY)
-        Peak Energy Time: {user_settings.get('peak_energy', 'morning')} (Schedule intense tasks here)
-        Scheduling Style: {user_settings.get('scheduling_style', 'spread')} (Prefer this way of organizing tasks)
-        Target Score Goal: {user_settings.get('target_score', 'High')}
-        Fixed Outside Commitments (DO NOT SCHEDULE TASKS DURING THESE TIMES):
-        {json.dumps(user_settings.get('constraints', []), indent=2)}
-
-        [TASK LIST]
-        {task_list_str}
-
-        [STUDENT PERFORMANCE DATA]
-        {perf_str}
-
-        [HARD CONSTRAINTS - VIOLATION = FAILURE]
-        1. **Locked Tasks**: You MUST place 'is_locked=True' tasks at their specific 'day' and 'start_time'. Do this FIRST.
-        2. **Fixed Constraints**: DO NOT schedule any study tasks during the student's Fixed Outside Commitments (Work, gym, etc.). Treat these slots as "Blocked".
-        3. **Study Window**: All tasks MUST be scheduled between {user_settings.get('study_start', 8)}:00 and {user_settings.get('study_end', 22)}:00.
-        4. **ABSOLUTELY NO OVERLAPS**: If Task A is 09:00-10:00, Task B CANNOT start before 10:00. Overlaps are strictly forbidden.
-        5. **3-Letter Days**: Use ONLY the 3-letter abbreviations for days: Sun, Mon, Tue, Wed, Thu, Fri, Sat. (NEVER use full names like "Tuesday").
-        6. **STRICT Daily Capacity**: The total duration of study tasks assigned to any single day MUST NOT exceed {user_settings.get('max_daily_hours', 8)} hours. This is a HARD LIMIT.
-
-        [HEURISTIC GUIDELINES - OPTIMIZE FOR THESE]
-        0. **Weakness Focus**: prioritize categories with low 'score' or low 'self_eval' from the PERFORMANCE DATA. Give them prime slots and more frequent sessions.
-        1. **Peak Energy Sync**: Use the student's energy window ({user_settings.get('peak_energy', 'morning')}) for the most difficult or high-priority tasks.
-        2. **Scheduling Preference**: If style is 'batch', group similar subjects together on the same day. If 'spread', distribute different subjects across the week. Style requested: {user_settings.get('scheduling_style', 'spread')}.
-        3. **Subject Mixing (The 3-Hour Rule)**: Do not schedule > 3 hours of the *same* Subject (Quantitative, Verbal, English) consecutively. Alternate subjects to maximize retention.
-        4. **Simulation Blocks**: If a task is a "Simulation" (duration > 180m), prioritize placing it in the morning (e.g., starting 08:00 or 09:00) on a day with few other commitments.
-        5. **Vocab Spacing**: If there are multiple short "English" or "Vocab" tasks, spread them out across different days rather than bunching them.
-        6. **Weakness First**: Schedule 'High' priority tasks earlier in the day or week.
-
-        [OVERFLOW PROTOCOL (CRITICAL)]
-        If the total duration of tasks > available study hours OR daily limits are reached:
-        1. You MUST **omit** tasks from the output rather than exceeding limits.
-        2. **Prioritize Exclusion**: Drop tasks with 'Low' priority first, then tasks where the student has high performance scores.
-        3. **Must Schedule**: Keep 'High' priority tasks and 'Simulation' blocks if possible.
-        4. It is better to return a partial, valid schedule than a full schedule with overlaps.
-
-        [CONCISE REASONING "thought_process"]
-        1. **Locked**: Identified locked tasks.
-        2. **Placement**: Placed high priority/weakness tasks in optimal slots.
-        3. **Checks**: Verified 0 overlaps and Daily Limits.
-
-        [OUTPUT]
-        - Return a JSON object matching the WeeklySchedule schema.
-        - **IMPORTANT**: If your tasks exceed the daily capacity for the entire week, prioritize scheduling the most important tasks and leave the lower-priority ones out of the 'schedule' array. 
-        - Use ONLY 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat' for the 'day' field.
-        """
-
-    # Single shot execution (No retries)
+    client = genai.Client(api_key=api_key)
+    
     try:
-        response = await client.aio.models.generate_content(
-            model='gemini-2.5-flash-lite',
-            contents=prompt,
-            config={
-                'response_mime_type': 'application/json',
-                'response_schema': WeeklySchedule
-            }
-        )
+        # 0. Pre-processing: Map tasks for lookup
+        task_map = {str(t["id"]): t for t in events}
 
-        if response.parsed:
-            return response.parsed
+        # Step 1: Profiling
+        # Step 1: Profiling
+        print("Scheduler: Step 1 - Profiling Tasks...")
         
-        try:
-            # print(f"DEBUG: Raw Gemini Response: {response.text}")
-            text = response.text.strip()
-            # Remove markdown fences if present
-            if text.startswith("```"):
-                text = text.split("\n", 1)[-1]
-                if text.endswith("```"):
-                    text = text.rsplit("\n", 1)[0]
-                # Handle cases where the first line was ```json
-                if text.startswith("json"):
-                    text = text[4:].strip()
-            
-            data = json.loads(text)
-            return WeeklySchedule(**data)
-        except json.JSONDecodeError as e:
-            # Log to file explicitly here
-            error_log_path = Path(__file__).parent / 'scheduler_error.log'
-            with open(error_log_path, 'a', encoding='utf-8') as f:
-                f.write(f"\n[{datetime.datetime.now()}] JSON DECODE ERROR:\n")
-                f.write(f"Raw Text: {response.text}\n")
-                f.write(f"Error: {e}\n")
-            
-            print(f"CRITICAL: Failed to decode JSON from Gemini: {response.text}")
-            raise ValueError("Invalid JSON from Gemini")
+        # Split tasks into those needing profile and those having it
+        unknown_tasks = []
+        profile_map = {}
+        
+        for t in events:
+            tid = str(t["id"])
+            if t.get("cognitive_type"):
+                profile_map[tid] = t["cognitive_type"]
+            else:
+                unknown_tasks.append(t)
+        
+        if unknown_tasks:
+             print(f"Profiling {len(unknown_tasks)} new tasks...")
+             new_profiles = await _get_cognitive_profiles(client, unknown_tasks)
+             for p in new_profiles.profiles:
+                 profile_map[p.task_id] = p.cognitive_type
+             
+             # IMMEDIATE SAVE CALLBACK
+             if profile_update_callback:
+                 print("Scheduler: Triggering immediate profile save...")
+                 try:
+                     await profile_update_callback(profile_map)
+                 except Exception as e:
+                     print(f"Warning: Profile save callback failed: {e}")
 
+        else:
+             print("Skipping Profiling (All tasks known)")
+             
+        # Mock profile object for passing to strategist if needed, or just construct list
+        # We need a TaskProfileList object for Step 2 if we want to keep signature same
+        # Reconstruct list from map
+        all_profiles_list = [TaskProfile(task_id=tid, cognitive_type=ctype, reasoning="Loaded/Cached") for tid, ctype in profile_map.items()]
+        profiles = TaskProfileList(profiles=all_profiles_list)
+        
+        # Step 2: Strategizing Week
+        print("Scheduler: Step 2 - Strategizing Week...")
+        strategy = await _generate_week_strategy(client, events, profiles, user_settings, user_profile, user_feedback)
+        
+        print(f"DEBUG: Strategist Reason: {strategy.strategy_reasoning}")
+        print(f"DEBUG: Strategist assigned {len(strategy.assignments)} tasks.")
+        if len(strategy.assignments) == 0:
+             print("DEBUG: ALERT! Strategist assigned ZERO tasks. Check prompt or capacity.")
+        
+        # Step 3: Tactical Optimization
+        print("Scheduler: Step 3 - Optimizing Days (The Tactician)...")
+        
+        final_schedule = []
+        tasks_by_day = {d: [] for d in ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]}
+        
+        for assignment in strategy.assignments:
+            tid = assignment.task_id
+            
+            # Simple ID usage
+            if tid not in task_map: 
+                 # Tolerance for string/int mismatch
+                 print(f"Warning: Strategist ID {tid} not in map")
+                 continue
+            
+            raw = task_map[tid]
+            
+            # ... (Rest of logic uses raw dict using short_id lookup)
+            
+            # Create OptimizationTask
+            # Map string cognitive type to Enum
+            c_type_str = profile_map.get(tid, "General")
+            try:
+                c_type = CognitiveType(c_type_str)
+            except:
+                c_type = CognitiveType.GENERAL
+            
+            opt_task = OptimizationTask(
+                id=tid,
+                name=raw.get("name", "Unknown"),
+                duration_mins=raw.get("duration", 30),
+                subject=raw.get("tag", "General"), # Using tag as subject
+                cognitive_type=c_type,
+                priority=raw.get("priority", "Medium"),
+                is_locked=raw.get("is_locked", False),
+                fixed_start=raw.get("start_time") if raw.get("is_locked") else None
+            )
+            
+            # If task is locked, FORCE it to its locked day, ignoring Strategist
+            if opt_task.is_locked and raw.get("day"):
+                 # Override strategist
+                 tasks_by_day[raw["day"]].append(opt_task)
+            elif assignment.day in tasks_by_day:
+                 tasks_by_day[assignment.day].append(opt_task)
+        
+        # 3b. Run Optimizer for each Day
+        full_timeline = []
+        
+        for day, day_tasks in tasks_by_day.items():
+            if not day_tasks: continue
+            
+            # Filter constraints for this day
+            daily_constraints = [
+                c for c in user_settings.get('constraints', []) 
+                if c.get('day') == day
+            ]
+            
+            optimizer = DailyBatchOptimizer(day, daily_constraints, user_settings)
+            results = optimizer.solve(day_tasks)
+            
+            for res in results:
+                full_timeline.append(OrchestratedTask(
+                    task_id=res["id"],
+                    day=res["day"],
+                    start_time=res["start_time"],
+                    duration_mins=int((res["end_time"] - res["start_time"]) * 60),
+                    rationale=f"Optimized for {profile_map.get(str(res['id']), 'General')} performance"
+                ))
+
+        # Step 4: Explanation (The Narrator)
+        # Explains the final Result
+        print("Scheduler: Step 4 - Examining Result...")
+        # summary = await _explain_schedule(client, full_timeline, strategy.strategy_reasoning) 
+        # Using simple summary for speed for now, or minimal prompt
+        
+        return WeeklySchedule(
+            thought_process=[
+                f"Configured {len(profiles.profiles)} task profiles.",
+                f"Strategist Balanced Week: {strategy.strategy_reasoning}",
+                f"Tactician Optimized {len(full_timeline)} slots using Cognitive Laws."
+            ],
+            schedule=full_timeline,
+            logic_summary=strategy.strategy_reasoning,
+            task_profiles=profile_map
+        )
+        
     except Exception as e:
-        # Log full traceback to file for debugging
+        # Fallback logging
         error_log_path = Path(__file__).parent / 'scheduler_error.log'
         with open(error_log_path, 'a', encoding='utf-8') as f:
-            f.write(f"\n[{datetime.datetime.now()}] ERROR in orchestrate_schedule:\n")
+            f.write(f"\n[{datetime.datetime.now()}] ERROR in orchestrate_v2:\n")
             f.write(traceback.format_exc())
-            f.write("\n------------------------------------------------\n")
-
-        error_msg = str(e).lower()
-        if "503" in error_msg or "overloaded" in error_msg or "resource exhausted" in error_msg or "429" in error_msg:
-            print(f"Gemini API Quota/Overload: {e}")
-            raise ValueError("GEMINI_OVERLOADED")
-        
-        print(f"Error during orchestration: {e}")
+        print(f"Scheduler Error: {e}")
         raise e
+
+# --- Helper Prompts ---
+
+async def _get_cognitive_profiles(client, events):
+    # Simplified list for prompt
+    simple_events = [{k: v for k, v in t.items() if k in ['id', 'name', 'tag']} for t in events]
+    
+    prompt = f"""
+    Analyze the cognitive load of these study tasks.
+    Assign each a 'cognitive_type' from:
+    1. 'Analytical' (Math, Geometry, Logic, Data Analysis) - Requires heavy fluid intelligence.
+    2. 'Creative' (Essay, Writing, Brainstorming) - Requires focus and verbal fluency.
+    3. 'Memory' (Vocabulary, Flashcards, Formulas) - Rote memorization.
+    4. 'Review' (Error Logs, Debriefing) - Looking at past work.
+    5. 'General' (Reading, Admin, Misc) - Low specific load.
+
+    Tasks: {json.dumps(simple_events)}
+    """
+    
+    response = await client.aio.models.generate_content(
+        model='gemini-2.5-flash-lite',
+        contents=prompt,
+        config={'response_mime_type': 'application/json', 'response_schema': TaskProfileList}
+    )
+    return response.parsed
+
+
+async def _generate_week_strategy(client, events, profiles, user_settings, user_profile, feedback):
+    # Dynamic Prompt Construction based on Style
+    style = user_settings.get('scheduling_style', 'spread')
+    
+    # Calculate Theoretical Min Days
+    total_duration_mins = sum([t.get('duration', 30) for t in events])
+    max_daily_hours = user_settings.get('max_daily_hours', 4)
+    if max_daily_hours <= 0: max_daily_hours = 4
+    
+    min_days_needed = (total_duration_mins / 60.0) / max_daily_hours
+    import math
+    target_days = math.ceil(min_days_needed)
+    
+    if style == 'batch':
+        style_goals = f"""
+    2. **Batching**: 
+       - **TARGET ACTIVE DAYS**: {target_days} (or max {target_days + 1}).
+       - Total Work is {total_duration_mins} mins. Max/Day is {max_daily_hours*60} mins.
+       - You MUST fit everything into approximately {target_days} days.
+       - LEAVE THE OTHER {7 - target_days} DAYS EMPTY.
+       - decide on which days are best to fill 
+        """
+        energy_instruction = """
+    [ENERGY - BATCH MODE]
+    - Treat days as buckets of capacity.
+    - If a day (e.g. Thu) has a class, only use it if Mon-Wed are FULL or if you absolutely need the spillover.
+    - **DO NOT** drop tasks. Open a new Day bin if current one is full.
+        """
+    else:
+        # Spread Mode (Default)
+        style_goals = """
+    2. **Balance**: Distribute total duration evenly across all available days.
+    3. **Spread Consistently**: Ensure no single day is significantly heavier than others (unless needed for High Priority).
+    4. **Strategy**: Tasks marked 'High' Priority MUST be assigned to optimal days.
+        """
+        energy_instruction = """
+    [ENERGY - SPREAD MODE]
+    1. Calculate "Free Capacity" = (Max Daily Hours) - (Fixed Constraints).
+    2. **DO NOT** overload days with classes. If a day has a long event (>4h), assign VERY FEW tasks to it to prevent burnout.
+        """
+
+    prompt = f"""
+    You are the Strategic Planner. Assign each task to a DAY of the week (Sun-Sat).
+    
+    [USER PROFILE]: {user_profile}
+    [FEEDBACK]: {feedback if feedback else "None"}
+    [CONSTRAINTS]: {json.dumps(user_settings.get('constraints', []))}
+    [MAX DAILY HOURS]: {user_settings.get('max_daily_hours', 4)}
+    [SCHEDULING STYLE]: {style}
+    
+    {energy_instruction}
+
+    [CRITICAL PRIORITY]
+    **DO NOT DROP TASKS** unless the *entire week's* capacity is reached. 
+
+    [GOALS]
+    1. **Interleaving**: Mix subjects (Quant/Verbal/English) on the same day.
+    {style_goals}
+    
+    [TASKS With Profiles]:
+    {json.dumps([t for t in events], default=str)}
+    
+    [Cognitive Tags]:
+    {json.dumps([p.dict() for p in profiles.profiles])}
+
+    Output a valid JSON with 'assignments' (task_id, day) and 'strategy_reasoning'.
+    """
+    
+
+    
+    response = await client.aio.models.generate_content(
+        model='gemini-2.5-flash-lite',
+        contents=prompt,
+        config={'response_mime_type': 'application/json', 'response_schema': WeekStrategy}
+    )
+    return response.parsed

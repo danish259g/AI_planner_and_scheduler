@@ -72,10 +72,14 @@ export default function TaskBank({ tasks, onDeleteTask, onOrchestrate, onTaskUpd
     return (
         <div className="task-bank-content">
             <div className="task-grid">
+                {tasks.filter(t => t.status !== 'scheduled' && t.status !== 'completed').length > 0 && (
+                    <div style={{ width: '100%', marginBottom: '8px', fontSize: '0.85rem', fontWeight: 700, color: '#64748b' }}>
+                        UNASSIGNED TASKS
+                    </div>
+                )}
                 {tasks.filter(t => t.status !== 'scheduled' && t.status !== 'completed').length === 0 ? (
                     <div style={{ padding: '20px', textAlign: 'center', color: '#888', fontStyle: 'italic', width: '100%' }}>
-                        Building your bank...<br />
-                        (or everything is planned! 🎉)
+                        {tasks.length > 0 ? "All tasks scheduled! 🎉" : "Task bank is empty."}
                     </div>
                 ) : (
                     tasks.filter(t => t.status !== 'scheduled' && t.status !== 'completed').map(task => (

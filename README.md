@@ -7,6 +7,8 @@ An intelligent weekly planning application that uses Generative AI (Google Gemin
 - **Orchestration**: Automatically schedules tasks into empty time slots using Gemini.
 - **Interactive Calendar**: Visual representation of the weekly schedule.
 - **Smart Scheduling**: Avoids overlaps and respects task durations.
+- **Cognitive Profiling**: Analyzes tasks (Analytical, Creative, etc.) to optimize energy.
+- **Personal Profile**: Customize your "Vibe" (Peak Energy, Scheduling Style) to tailor the schedule to your preferences.
 
 ## Prerequisites
 - **Node.js** (v16+)
@@ -22,17 +24,16 @@ cd AI_planner_and_scheduler
 ```
 
 ### 2. Backend Setup
-Navigate to the backend directory and set up the Python environment.
+Navigate to the root directory and set up the Python environment.
 
 ```bash
-cd backend
-python -m venv venv
+python -m venv backend\venv
 # Windows:
-venv\Scripts\activate
+backend\venv\Scripts\activate
 # Mac/Linux:
-# source venv/bin/activate
+# source backend/venv/bin/activate
 
-pip install -r requirements.txt
+pip install -r backend/requirements.txt
 ```
 
 **Configuration:**
@@ -45,8 +46,9 @@ GEMINI_API_KEY=your_api_key_here
 Navigate to the frontend directory and install dependencies.
 
 ```bash
-cd ../frontend
+cd frontend
 npm install
+cd ..
 ```
 
 ## Running the Application
@@ -61,9 +63,10 @@ start.bat
 You need to run the backend and frontend in separate terminals.
 
 **Terminal 1 (Backend):**
+Run from the **ROOT** directory `AI_planner_and_scheduler`:
 ```bash
-cd backend
 # Ensure venv is active
+# backend\venv\Scripts\activate
 uvicorn backend.main:app --reload --port 8000
 ```
 
@@ -77,10 +80,11 @@ Open your browser and navigate to `http://localhost:5173`.
 
 ## Usage
 1. **Add Tasks**: Type a task (e.g., "Gym workout for 1 hour") in the "Add New Task" box.
-2. **Build Your Bank**: Add multiple tasks to the Task Bank.
-3. **Orchestrate**: Click the **✨ Orchestrate Week** button in the Task Bank to have AI schedule them.
-4. **Clear**: Use the "Clear" button in the schedule header to reset.
+2. **Setup Profile**: Click the User Icon to set your peak energy times and constraints.
+3. **Orchestrate**: Click the **✨ Orchestrate Week** button to have AI schedule items.
+4. **Chat & Negotiate**: Use the Assistant chat to ask for changes (e.g., "Move gym to Tuesday").
 
 ## Troubleshooting
 - **Connection Refused**: Ensure the backend is running on port 8000.
+- **Import Errors**: Make sure you run `uvicorn` from the **root** folder, not inside `backend/`.
 - **API Errors**: Check your `GEMINI_API_KEY` in `backend/.env`.
