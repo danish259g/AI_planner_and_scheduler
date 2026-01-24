@@ -4,6 +4,7 @@ __pycache__/
 *.pyc
 *.log
 *.txt
+!requirements.txt
 *.csv
 
 verification.log

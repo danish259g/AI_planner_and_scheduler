@@ -249,7 +249,6 @@ async def _get_cognitive_profiles(client, events):
     )
     return response.parsed
 
-    return response.parsed
 
 async def _generate_week_strategy(client, events, profiles, user_settings, user_profile, feedback):
     # Dynamic Prompt Construction based on Style

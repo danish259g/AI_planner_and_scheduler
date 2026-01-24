@@ -7,7 +7,7 @@ import random
 from pathlib import Path
 from backend.interpreter import interpret_task as interpret_task_logic
 from backend.scheduler import orchestrate_schedule
-from backend.scheduler import orchestrate_schedule
+
 import backend.storage as storage
 
 app = FastAPI(title="AI Weekly Planner Backend") # Reload trigger
@@ -44,7 +44,7 @@ class Task(BaseModel):
     scheduled_day: Optional[str] = None
     scheduled_start: Optional[float] = None # Hour 0-23
     scheduled_end: Optional[float] = None # Hour 0-24
-    scheduled_end: Optional[float] = None # Hour 0-24
+
     rationale: Optional[str] = ""
     cognitive_type: Optional[str] = None
 
