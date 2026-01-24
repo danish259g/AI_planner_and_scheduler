@@ -31,15 +31,15 @@ class TimeSlot:
 
 # --- Constants & Laws ---
 
-ANALYTICAL_PEAK_START = 13.0  # 1:00 PM
-ANALYTICAL_PEAK_END = 15.5    # 3:30 PM (Broadened slightly)
+ANALYTICAL_PEAK_START = 13.5  # 1:30 PM (Per User Rule)
+ANALYTICAL_PEAK_END = 16.0    # Broadened slightly
 
 MORNING_VERBAL_START = 8.0
-MORNING_VERBAL_END = 12.0
+MORNING_VERBAL_END = 11.5     # Until 11:30
 
 GLUCOSE_SPIKE_LUNCH = 14.0    # Post Lunch
 GLUCOSE_SPIKE_DINNER = 20.0   # Post Dinner
-GLUCOSE_WINDOW = 1.5          # Duration of spike effect
+GLUCOSE_WINDOW = 1.0          # Duration of spike effect
 
 MAX_CONSECUTIVE_MINUTES = 90  # The 90-Minute Law
 
@@ -109,6 +109,19 @@ class DailyBatchOptimizer:
 
             # If we found a valid slot, place it
             if best_start != -1.0:
+                # [STRICT LIMIT CHECK]
+                # Check if adding this task exceeds the daily limit
+                # We do this check greedy-style: if it fits the schedule but breaks the limit, we skip it.
+                # Ideally, we should have filtered before, but duration-based filtering is trickier with gaps.
+                
+                # Calculate total minutes scheduled so far
+                total_mins = sum(s.task.duration_mins for s in self.scheduled_tasks)
+                daily_limit_mins = self.settings.get('max_daily_hours', 4) * 60
+                
+                if total_mins + t.duration_mins > daily_limit_mins:
+                    print(f"Optimization: Skipping task {t.name} ({t.duration_mins}m) - Daily limit reached ({total_mins}m used)")
+                    continue
+
                 self.scheduled_tasks.append(TimeSlot(best_start, best_start + (t.duration_mins/60.0), t))
                 # Sort scheduled tasks by time to keep state clean
                 self.scheduled_tasks.sort(key=lambda s: s.start_hour)
@@ -162,18 +175,23 @@ class DailyBatchOptimizer:
             elif start_time > 18.0: # Too late for heavy reading
                 score -= 20
 
-        # --- 3. The Verbal Glucose Law ---
+        # --- 3. The Verbal Glucose Law (Memory) ---
         # Memory/Vocab tasks prefer post-lunch (14:00) or post-dinner (20:00)
+        # AND Consolidation (Before Sleep)
         if task.cognitive_type == CognitiveType.MEMORY:
             dist_lunch = abs(start_time - GLUCOSE_SPIKE_LUNCH)
             dist_dinner = abs(start_time - GLUCOSE_SPIKE_DINNER)
+            dist_sleep = (self.day_end - start_time)
+            
             if dist_lunch < 1.0 or dist_dinner < 1.0:
-                score += 40
+                score += 40 # Glucose Spike
+            elif dist_sleep < 1.5:
+                score += 30 # Consolidation Law (Before Sleep)
             else:
-                score += 0 # Neutral elsewhere
+                score += 0 
 
-        # --- 4. The Consolidation Law (Before Sleep) ---
-        # Review tasks get boost if they are late in the day (last 2 hours of window)
+        # --- 4. The Consolidation Law (Review) ---
+        # Review tasks get boost if they are late in the day (last 2 hours)
         if task.cognitive_type == CognitiveType.REVIEW:
             if start_time >= (self.day_end - 2.0):
                 score += 50
@@ -197,12 +215,46 @@ class DailyBatchOptimizer:
                 score -= 1000 # BLOCK THIS SLOT
 
         # --- 6. User Preference: Morning Person vs Evening ---
+        # --- 6. User Preference: Morning Person vs Evening ---
+        import math
+        
         if self.peak_energy == 'morning':
-            if start_time < 12: score += 5
+            if start_time < 12: score += 50
+            elif start_time > 18: score -= 30
+            
         elif self.peak_energy == 'evening':
-            if start_time > 16: score += 5
+            if start_time > 16: score += 50
+            elif start_time < 12: score -= 30
+            
+        elif self.peak_energy == 'afternoon':
+             if 12 <= start_time <= 17: score += 50
+             elif start_time < 10 or start_time > 20: score -= 20
+
+        # --- 7. The Cool Down Law (Post-Class Buffer) ---
+        # If there is a constrained event (class) recently, we need a break.
+        prev_constraint = self._get_constraint_before(start_time)
+        if prev_constraint:
+            # If immediately after (gap < 45m), BIG penalty for heavy cognitive work
+            gap = start_time - float(prev_constraint['end'])
+            if gap < 0.75: # Less than 45 mins
+                 if task.cognitive_type in [CognitiveType.ANALYTICAL, CognitiveType.CREATIVE]:
+                     score -= 40 # Force a break or lighter task
+                 else:
+                     score -= 10 # still prefer a customized break
 
         return score
+
+    def _get_constraint_before(self, start_time: float) -> Optional[Dict]:
+        """Find the nearest constraint that ends before or at start_time"""
+        last_c = None
+        closest_end = -1
+        for c in self.constraints:
+             end = float(c['end'])
+             if end <= start_time:
+                 if end > closest_end:
+                     closest_end = end
+                     last_c = c
+        return last_c
 
     def _get_task_before(self, start_time: float) -> Optional[TimeSlot]:
         """Returns the task that ends exactly at or remarkably close to start_time"""

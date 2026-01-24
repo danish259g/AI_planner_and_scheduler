@@ -239,6 +239,14 @@ async def generate_schedule(): # No payload needed, reads from DB
                  # NEW: Save the AI's reason
                  if getattr(matches, "rationale", None):
                     t["rationale"] = matches.rationale
+            else:
+                 # Task was NOT scheduled (dropped due to limits or strategy)
+                 # Reset to pending so it appears in the bank
+                 t["status"] = "pending"
+                 t["scheduled_day"] = None
+                 t["scheduled_start"] = None
+                 t["scheduled_end"] = None
+                 t["rationale"] = None
             
             # NEW: Persist cognitive type from scheduler
             if hasattr(orchestrated_result, "task_profiles"):
@@ -328,7 +336,14 @@ async def negotiate_schedule(request: ChatRequest):
                 t["scheduled_day"] = matches.day
                 t["scheduled_start"] = matches.start_time
                 t["scheduled_end"] = matches.start_time + (t.get("duration", 30) / 60)
+                t["scheduled_end"] = matches.start_time + (t.get("duration", 30) / 60)
                 t["status"] = "scheduled"
+            else:
+                 # Reset if dropped during negotiation
+                 t["status"] = "pending"
+                 t["scheduled_day"] = None
+                 t["scheduled_start"] = None
+                 t["scheduled_end"] = None
             
             # NEW: Persist cognitive type from scheduler
             if hasattr(orchestrated_result, "task_profiles"):

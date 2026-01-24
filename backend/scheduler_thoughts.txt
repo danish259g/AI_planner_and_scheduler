@@ -970,3 +970,93 @@ User Feedback: clear my wednesday
 > Configured 22 task profiles.
 > Strategist Balanced Week: The student is strong in English and needs to improve in Geometry. They are a morning person. The schedule incorporates interleaving by mixing quantitative and English tasks daily, with a focus on Geometry for improvement. Constraints are respected, and no day exceeds 3 hours of study. The distribution aims for balance, prioritizing core subjects and addressing weaker areas.
 > Tactician Optimized 22 slots using Cognitive Laws.
+
+
+--- Orchestration Run (Generate) ---
+> Configured 22 task profiles.
+> Strategist Balanced Week: The assignments were made by first calculating the free capacity for each day, considering the fixed constraints and the maximum daily hours. Tasks were then distributed to maximize interleaving of subjects (Quantitative, English, Verbal, Essay) and to balance the workload across the week, prioritizing lighter loads on days with significant fixed commitments. Tasks were spread consistently to avoid overloading any single day. All tasks were assigned as the total task duration did not exceed the total weekly free capacity.
+> Tactician Optimized 0 slots using Cognitive Laws.
+
+
+--- Orchestration Run (Generate) ---
+> Configured 22 task profiles.
+> Strategist Balanced Week: The assignments were made by first calculating the free capacity for each day. Days with fixed constraints like 'class' on Sunday and Tuesday, and 'קידוש' and 'טיול עם הכלב' on Friday and Saturday, were allocated fewer tasks to avoid overload. Tasks were then distributed aiming for a balance between different cognitive types and subject tags (Quantitative, English, Verbal, Essay). Free days like Monday, Wednesday, and Thursday were utilized for longer tasks, while busy days had shorter, more manageable tasks assigned. All tasks were assigned as the total duration of tasks did not exceed the total weekly free capacity.
+> Tactician Optimized 22 slots using Cognitive Laws.
+
+
+--- Orchestration Run (Generate) ---
+> Configured 22 task profiles.
+> Strategist Balanced Week: The plan prioritizes interleaving subjects and balancing the workload across the week. Days with fixed constraints (Sunday, Tuesday, Friday, Monday, Wednesday, Saturday) have had their free capacity calculated and tasks are assigned to fill remaining slots without exceeding the 3-hour daily limit. Tasks are distributed to allow for consistent practice across different cognitive types and subjects, with a focus on analytical and general tasks on days with more capacity. All tasks are assigned as their total duration fits within the total weekly free capacity. Specific constraints were respected, and the 'class' constraints on Sunday and Tuesday, and the 'Kiddush' and 'Study with Host' constraints on Friday, Monday, Wednesday, and Saturday were taken into account to determine remaining available time.
+> Tactician Optimized 22 slots using Cognitive Laws.
+
+
+--- Orchestration Run (Generate) ---
+> Configured 22 task profiles.
+> Strategist Balanced Week: Calculated free capacity for each day based on fixed constraints and MAX DAILY HOURS of 3. Assigned tasks prioritizing medium-priority tasks and interleaving subjects. Days with long classes (Sunday, Tuesday, Friday) were given minimal or no tasks. Tasks were distributed to ensure no day exceeds the 3-hour limit. No tasks were dropped as total task duration fit within total weekly free capacity.
+> Tactician Optimized 21 slots using Cognitive Laws.
+
+
+--- Orchestration Run (Generate) ---
+> Configured 22 task profiles.
+> Strategist Balanced Week: The scheduling strategy prioritizes spreading tasks across the week to maintain a consistent study load and maximize active days, adhering to the 'spread' style. Fixed constraints were accounted for, and free capacity was calculated for each day. Tasks were distributed to ensure no day exceeds the 3-hour maximum. Days with significant fixed constraints (like Tuesday with class 8-14, which has minimal free capacity) were assigned fewer tasks. The 'rest' constraint on Friday from 14-18 was also respected. Tasks were interleaved by subject to provide variety. All tasks were assigned as the total task duration is within the total weekly free capacity. Critical thinking and analytical tasks were distributed across weekdays with available capacity.
+> Tactician Optimized 20 slots using Cognitive Laws.
+
+
+--- Orchestration Run (Generate) ---
+> Configured 22 task profiles.
+> Strategist Balanced Week: The scheduling style is set to 'spread', so tasks have been distributed across the week to maximize the number of active days and maintain consistency. Constraints were respected, and 'Free Capacity' was calculated for each day. Days with classes were assigned fewer tasks to avoid overloading. All tasks have been assigned as the total task duration fits within the total weekly free capacity.
+> Tactician Optimized 21 slots using Cognitive Laws.
+
+
+--- Orchestration Run (Generate) ---
+> Configured 22 task profiles.
+> Strategist Balanced Week: The user wants to batch tasks, minimizing the number of active days and grouping tasks into fewer, longer days. Task 18 is the only pending task. Given the constraints and the batch scheduling style, it is assigned to Monday, which has remaining capacity and aligns with the strategy of grouping tasks. Other tasks are already scheduled.
+> Tactician Optimized 1 slots using Cognitive Laws.
+
+
+--- Orchestration Run (Generate) ---
+> Configured 22 task profiles.
+> Strategist Balanced Week: The user has requested a 'batch' scheduling style, which means minimizing the number of active days and grouping tasks into fewer, longer days. The user also has several fixed constraints, including classes on Sunday and Tuesday, and a Kedushah event on Friday evening. The maximum daily study hours is 3.  Monday and Wednesday were chosen as the primary study days to batch tasks. Tuesday and Sunday are heavily booked with classes, making them unsuitable for additional study. Friday has a Kedushah event and a rest period, also limiting its capacity. Saturday has a short 'Tiyul im ha'kolev' event, leaving some capacity, but it's not used to maintain the batching strategy. The tasks are distributed to fit within the 3-hour daily limit on Monday and Wednesday, interleaving different subjects. No tasks were dropped as the total duration of pending tasks (15 hours and 45 minutes) fits within the total available free capacity across the week, given the constraints.
+> Tactician Optimized 8 slots using Cognitive Laws.
+
+
+--- Orchestration Run (Generate) ---
+> Configured 22 task profiles.
+> Strategist Balanced Week: The scheduling style is 'batch'. I've assigned tasks to minimize the number of active days and fill them close to their maximum daily hours. Constraints were respected, ensuring no task overlaps with fixed commitments. For example, Monday has a constraint from 14:00 to 16:00, so tasks were scheduled around it. Similarly, Wednesday has a similar constraint. Friday has a 'rest' constraint from 14:00 to 18:00 and another from 18:00 to 22:00, leaving only early morning or late-night hours free, which were utilized for shorter tasks. Tasks were interleaved to ensure a mix of subjects on assigned days. Since no tasks needed to be dropped, all tasks are assigned. The critical instruction to avoid overloading days with long events was followed, and days with significant constraints have fewer tasks assigned.
+> Tactician Optimized 20 slots using Cognitive Laws.
+
+
+--- Orchestration Run (Generate) ---
+> Configured 22 task profiles.
+> Strategist Balanced Week: The scheduling strategy prioritizes adhering to the 'batch' style by minimizing the number of active days. However, it also critically emphasizes not dropping tasks. Therefore, where necessary to accommodate all tasks and avoid exceeding daily limits, the strategy deviates from strict batching to incorporate additional days. Tasks are distributed to leverage available free capacity after fixed constraints are accounted for. The 'class' on Sunday and Tuesday (8-14) significantly reduces free capacity, thus no tasks are assigned to these days. Friday has a 'rest' constraint (14-18) and a 'Qidush' constraint (18-22), also limiting its capacity for tasks. Monday and Wednesday have 'Aimun B'hder Koshir' constraints (14-16), leaving ample space. Saturday has a 'Tiyul Im Ha'klb' constraint (10-11). To balance the load and interleave subjects, tasks are distributed across Monday, Tuesday, Wednesday, Thursday, Friday, and Saturday, ensuring that no single day exceeds the 6-hour maximum and that a variety of cognitive types are engaged throughout the week.
+> Tactician Optimized 22 slots using Cognitive Laws.
+
+
+--- Orchestration Run (Generate) ---
+> Configured 22 task profiles.
+> Strategist Balanced Week: The aggressive batching strategy was employed to fill the maximum number of tasks into the fewest days possible. Monday was chosen as the primary day for batching as it has the most available free capacity (6 hours) without any existing class constraints. All pending tasks were assigned to Monday, aiming to complete as many as possible within the daily hour limit. This approach adheres to the goal of minimizing the number of days used for scheduling and interleaving subjects on that day.
+> Tactician Optimized 8 slots using Cognitive Laws.
+
+
+--- Orchestration Run (Generate) ---
+> Configured 22 task profiles.
+> Strategist Balanced Week: The strategy employed here is aggressive batching, aiming to consolidate tasks into as few days as possible while respecting the MAX DAILY HOURS constraint and existing class/rest constraints. Tasks were grouped by type (Quantitative, English, Essay, Verbal) to facilitate interleaving within days and ensure a mix of subjects. Monday was chosen for high-duration Quantitative tasks (1, 6, 7) to maximize its available capacity. Tuesday was assigned English tasks (2, 9, 11) to promote interleaving. Wednesday was used for a mix of English and Essay tasks (3, 10, 12). Thursday was allocated Verbal and Simulation tasks (4, 5, 15, 18). Friday, which has a later class and a rest period, was used for the remaining Essay tasks (13, 14, 19, 20) along with the Geometry task (8) to utilize available capacity. Saturday was used for the remaining Verbal and Quantitative tasks (16, 17, 21, 22). All tasks are assigned and no day exceeds the 6-hour limit. No tasks were dropped as per critical priority.
+> Tactician Optimized 22 slots using Cognitive Laws.
+
+
+--- Orchestration Run (Generate) ---
+> Configured 22 task profiles.
+> Strategist Balanced Week: The strategy employed is Ruthless Batching, aiming to fit all tasks into approximately two days, prioritizing Monday and Tuesday. This approach adheres to the goal of minimizing active days to two and filling them sequentially. All 'Medium' priority tasks were assigned to these two days to ensure no tasks are dropped and the week's capacity is not exceeded. The constraints and MAX DAILY HOURS were considered, and although some days have existing commitments, the batching strategy focuses on filling the available capacity on Mon and Tue first before considering other days. Interleaving of subjects within a day was not a priority in this batching strategy, as the primary goal was to pack the allocated days efficiently.
+> Tactician Optimized 22 slots using Cognitive Laws.
+
+
+--- Orchestration Run (Generate) ---
+> Configured 22 task profiles.
+> Strategist Balanced Week: The tasks have been spread across the week, with an effort to interleave subjects where possible. Days with fixed constraints have been utilized strategically, ensuring that the remaining free capacity is not overloaded. The 'spread' scheduling style has been followed to maintain consistency and avoid burnout on any single day. All tasks have been assigned as per the instructions.
+> Tactician Optimized 22 slots using Cognitive Laws.
+
+
+--- Orchestration Run (Generate) ---
+> Configured 22 task profiles.
+> Strategist Balanced Week: The tasks have been distributed across the week, prioritizing interleaving of subjects and aiming for a spread consistent with the 'spread' scheduling style. Constraints were respected, ensuring no task overlaps with fixed commitments like classes or 'kidosh'. The 'rest' constraint on Friday was also considered by not assigning tasks within that specific time block. The 'MAX DAILY HOURS' of 3 was adhered to, and tasks were distributed to avoid overloading any single day, especially considering the longer class durations on Sunday and Tuesday. The long duration constraint on Friday's 'rest' was also respected by not scheduling tasks during this time.
+> Tactician Optimized 20 slots using Cognitive Laws.

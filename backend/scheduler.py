@@ -58,6 +58,20 @@ async def orchestrate_schedule(
     user_settings: Dict[str, Any] = None,
     profile_update_callback: Optional[Any] = None # Async callback(profile_map)
 ) -> WeeklySchedule:
+    # 0a. [PERFORMANCE BOOST]: Automatically boost priority for weak subjects
+    if performance_data:
+        for task in events:
+            tag = task.get("tag")
+            if tag and tag in performance_data:
+                # Store original priority just in case
+                # task["original_priority"] = task.get("priority")
+                
+                perf = performance_data[tag]
+                # If score is known (count > 0) and low (< 70)
+                if perf.get("count", 0) > 0 and perf.get("score", 0) < 70:
+                    print(f"Scheduler: Priority Boost for {task.get('name')} (Score: {perf.get('score')})")
+                    task["priority"] = "High"
+
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
         raise ValueError("GEMINI_API_KEY not found")
@@ -106,9 +120,14 @@ async def orchestrate_schedule(
         all_profiles_list = [TaskProfile(task_id=tid, cognitive_type=ctype, reasoning="Loaded/Cached") for tid, ctype in profile_map.items()]
         profiles = TaskProfileList(profiles=all_profiles_list)
         
-        # Step 2: Strategic Day Assignment
+        # Step 2: Strategizing Week
         print("Scheduler: Step 2 - Strategizing Week...")
         strategy = await _generate_week_strategy(client, events, profiles, user_settings, user_profile, user_feedback)
+        
+        print(f"DEBUG: Strategist Reason: {strategy.strategy_reasoning}")
+        print(f"DEBUG: Strategist assigned {len(strategy.assignments)} tasks.")
+        if len(strategy.assignments) == 0:
+             print("DEBUG: ALERT! Strategist assigned ZERO tasks. Check prompt or capacity.")
         
         # Step 3: Tactical Optimization
         print("Scheduler: Step 3 - Optimizing Days (The Tactician)...")
@@ -230,21 +249,67 @@ async def _get_cognitive_profiles(client, events):
     )
     return response.parsed
 
+    return response.parsed
+
 async def _generate_week_strategy(client, events, profiles, user_settings, user_profile, feedback):
-    # Context
+    # Dynamic Prompt Construction based on Style
+    style = user_settings.get('scheduling_style', 'spread')
+    
+    # Calculate Theoretical Min Days
+    total_duration_mins = sum([t.get('duration', 30) for t in events])
+    max_daily_hours = user_settings.get('max_daily_hours', 4)
+    if max_daily_hours <= 0: max_daily_hours = 4
+    
+    min_days_needed = (total_duration_mins / 60.0) / max_daily_hours
+    import math
+    target_days = math.ceil(min_days_needed)
+    
+    if style == 'batch':
+        style_goals = f"""
+    2. **Batching**: 
+       - **TARGET ACTIVE DAYS**: {target_days} (or max {target_days + 1}).
+       - Total Work is {total_duration_mins} mins. Max/Day is {max_daily_hours*60} mins.
+       - You MUST fit everything into approximately {target_days} days.
+       - LEAVE THE OTHER {7 - target_days} DAYS EMPTY.
+       - decide on which days are best to fill 
+        """
+        energy_instruction = """
+    [ENERGY - BATCH MODE]
+    - Treat days as buckets of capacity.
+    - If a day (e.g. Thu) has a class, only use it if Mon-Wed are FULL or if you absolutely need the spillover.
+    - **DO NOT** drop tasks. Open a new Day bin if current one is full.
+        """
+    else:
+        # Spread Mode (Default)
+        style_goals = """
+    2. **Balance**: Distribute total duration evenly across all available days.
+    3. **Spread Consistently**: Ensure no single day is significantly heavier than others (unless needed for High Priority).
+    4. **Strategy**: Tasks marked 'High' Priority MUST be assigned to optimal days.
+        """
+        energy_instruction = """
+    [ENERGY - SPREAD MODE]
+    1. Calculate "Free Capacity" = (Max Daily Hours) - (Fixed Constraints).
+    2. **DO NOT** overload days with classes. If a day has a long event (>4h), assign VERY FEW tasks to it to prevent burnout.
+        """
+
     prompt = f"""
     You are the Strategic Planner. Assign each task to a DAY of the week (Sun-Sat).
     
     [USER PROFILE]: {user_profile}
     [FEEDBACK]: {feedback if feedback else "None"}
     [CONSTRAINTS]: {json.dumps(user_settings.get('constraints', []))}
-    [MAX HOURS/DAY]: {user_settings.get('max_daily_hours', 4)}
+    [MAX DAILY HOURS]: {user_settings.get('max_daily_hours', 4)}
+    [SCHEDULING STYLE]: {style}
+    
+    {energy_instruction}
+
+    [CRITICAL PRIORITY]
+    **DO NOT DROP TASKS** unless the *entire week's* capacity is reached. 
 
     [GOALS]
-    1. **Interleaving**: Mix subjects (Quant/Verbal/English) on the same day. Avoid "Math Only" days.
-    2. **Balance**: Distribute total duration evenly. Don't overload busy days (checked against Constraints).
-    3. **Drop**: If the week is overloaded, you may omit Low priority tasks (assign to "None" or just omit).
-
+    1. **Interleaving**: Mix subjects (Quant/Verbal/English) on the same day.
+    {style_goals}
+    
     [TASKS With Profiles]:
     {json.dumps([t for t in events], default=str)}
     
@@ -253,6 +318,8 @@ async def _generate_week_strategy(client, events, profiles, user_settings, user_
 
     Output a valid JSON with 'assignments' (task_id, day) and 'strategy_reasoning'.
     """
+    
+
     
     response = await client.aio.models.generate_content(
         model='gemini-2.5-flash-lite',
