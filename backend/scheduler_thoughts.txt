@@ -1,6 +1,0 @@
-
-
---- Orchestration Run (Generate) ---
-> Configured 22 task profiles.
-> Strategist Balanced Week: The tasks have been distributed across the week, keeping in mind the 'spread' scheduling style and the constraints. Each day has a mix of tasks to promote interleaving. Days with fixed constraints like 'class' or 'Kedushah' have been managed to ensure free capacity is available for new tasks. The 'rest' constraint on Friday was also considered. The goal was to balance the workload and avoid overloading any single day, while ensuring all tasks are assigned.
-> Tactician Optimized 22 slots using Cognitive Laws.

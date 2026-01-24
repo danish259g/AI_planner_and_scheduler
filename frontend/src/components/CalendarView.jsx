@@ -161,7 +161,6 @@ export default function CalendarView({ tasks, userSettings, onTaskMove, onTaskUp
                                                 backgroundColor: styleInfo.bg,
                                                 borderLeft: `3px solid ${styleInfo.border}`,
                                                 color: '#333',
-                                                color: '#333',
                                                 fontSize: duration <= 45 ? '0.7rem' : '0.75rem',
                                                 padding: '1px 4px',
                                                 overflow: 'hidden',
