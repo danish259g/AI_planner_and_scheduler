@@ -16,6 +16,7 @@ def _ensure_db():
                     "study_end": 22,
                     "constraints": []
                 },
+                "next_task_id": 1,
                 "performance_data": {
                     "Quantitative": {"score": 0, "self_eval": 5, "count": 0},
                     "Verbal": {"score": 0, "self_eval": 5, "count": 0},
@@ -122,16 +123,32 @@ def save_tasks(tasks: List[Dict[str, Any]]):
         json.dump(data, f, indent=2)
 
 def add_task(task: Dict[str, Any]) -> List[Dict[str, Any]]:
-    tasks = load_tasks()
-    # Check if exists
-    existing_index = next((i for i, t in enumerate(tasks) if str(t.get("id")) == str(task.get("id"))), -1)
+    # Read fresh
+    with open(DB_PATH, 'r') as f:
+        data = json.loads(f.read())
+    
+    tasks = data.get("tasks", [])
+    next_id = data.get("next_task_id", 1)
+    
+    # Check if this is an update (task has ID and exists)
+    t_id = str(task.get("id", ""))
+    existing_index = -1
+    if t_id:
+        existing_index = next((i for i, t in enumerate(tasks) if str(t.get("id")) == t_id), -1)
     
     if existing_index >= 0:
         tasks[existing_index] = task
     else:
+        # New Task - Assign ID
+        task["id"] = str(next_id)
+        data["next_task_id"] = next_id + 1
         tasks.append(task)
         
-    save_tasks(tasks)
+    data["tasks"] = tasks
+    
+    with open(DB_PATH, 'w') as f:
+        json.dump(data, f, indent=2)
+        
     return tasks
 
 def delete_task(task_id: str) -> List[Dict[str, Any]]:

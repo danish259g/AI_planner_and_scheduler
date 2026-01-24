@@ -23,8 +23,8 @@ class Task(BaseModel):
     priority: str = Field(description="Priority level: High, Medium, or Low")
     is_locked: bool = Field(description="True if the task has a specific time constraint (anchored), False otherwise")
     day: Optional[str] = Field(description="Specific day if mentioned (e.g. 'Monday', 'Tue'). Use 3-letter abbreviation (Mon, Tue, Wed...) if possible.")
-    start_time: Optional[str] = Field(description="Specific start time if mentioned (e.g. '15:00', '3pm'). Format as HH:MM if possible.")
-    end_time: Optional[str] = Field(description="Specific end time if mentioned. Format as HH:MM if possible.")
+    start_time: Optional[float] = Field(description="Start time as float hour (0-23). e.g. 14.5 for 2:30pm.")
+    end_time: Optional[float] = Field(description="End time as float hour (0-24).")
     comments: str = Field(description="Any extra useful information or context extracted from the user input")
 
 from backend.task_catalog import TASK_CATALOG
@@ -69,7 +69,8 @@ async def interpret_task(text: str) -> Task:
     - **location**: Any remaining details (e.g., "Triangles", "Review").
     - **priority**: 'High' if urgent/weakness, else 'Medium'.
     - **is_locked**: True ONLY if specific time is mandated.
-    - **day/start_time/end_time**: As specified.
+    - **day**: 3-letter code (Mon, Tue, Wed...).
+    - **start_time/end_time**: Convert to 24h float format (e.g. 2:30pm -> 14.5).
     - **comments**: Original context.
     
     [INFERENCE RULES]

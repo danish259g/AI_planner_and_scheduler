@@ -157,7 +157,7 @@ function App() {
 
   const handleQuickAdd = async (task) => {
     const newTask = {
-      id: String(Date.now()),
+      id: null, // Server will assign ID
       name: task.name || task.title,
       duration: task.duration || task.duration_mins,
       status: 'pending',
@@ -175,6 +175,7 @@ function App() {
       });
       if (res.ok) {
         const savedTask = await res.json();
+        // Backend returns the full task with the new ID
         setTasks(prev => [savedTask, ...prev]);
       }
     } catch (err) {

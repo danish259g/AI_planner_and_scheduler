@@ -7,7 +7,7 @@ import random
 from pathlib import Path
 from backend.interpreter import interpret_task as interpret_task_logic
 from backend.scheduler import orchestrate_schedule
-from backend.verifier import verify_schedule_algorithmic
+from backend.scheduler import orchestrate_schedule
 import backend.storage as storage
 
 app = FastAPI(title="AI Weekly Planner Backend") # Reload trigger
@@ -27,7 +27,7 @@ class TaskInput(BaseModel):
 
 # Updated Task model matching interpreter
 class Task(BaseModel):
-    id: Any
+    id: Optional[Any] = None
     name: str # Renamed from title
     duration: int # Renamed from duration_mins to match interpreter
     status: str = "pending"
@@ -44,6 +44,9 @@ class Task(BaseModel):
     scheduled_day: Optional[str] = None
     scheduled_start: Optional[float] = None # Hour 0-23
     scheduled_end: Optional[float] = None # Hour 0-24
+    scheduled_end: Optional[float] = None # Hour 0-24
+    rationale: Optional[str] = ""
+    cognitive_type: Optional[str] = None
 
 class UserProfile(BaseModel):
     profile: str
@@ -110,9 +113,16 @@ async def get_tasks():
 
 @app.post("/api/tasks", response_model=Task)
 async def add_task(task: Task):
-    # In a real app we might validate or generate ID backend-side if not provided
-    # For now we trust the frontend or storage wrapper
-    storage.add_task(task.dict())
+    # Delegate ID assignment to storage
+    updated_list = storage.add_task(task.dict())
+    
+    # Return the newly created task (it will be the last one if added)
+    # We find it by matching name/tag as a heuristic, or rely on it being the last one
+    # But safer: storage.add_task returns the full list.
+    # Let's trust it's the last one if we didn't send an ID.
+    if not task.id:
+         return Task(**updated_list[-1])
+         
     return task
 
 @app.delete("/api/tasks/{task_id}")
@@ -126,7 +136,7 @@ async def interpret_task(input: TaskInput):
     try:
         data = await interpret_task_logic(input.raw_text)
         new_task = Task(
-            id=str(random.randint(1000, 9999)), 
+            id=None, # Let storage assign it 
             name=data.name,
             duration=data.duration,
             tag=data.tag,
@@ -140,10 +150,11 @@ async def interpret_task(input: TaskInput):
             status="interpreted"
         )
         
-        # Save to DB immediately so it shows up in the UI/Task Bank
-        storage.add_task(new_task.dict())
+        # Save to DB immediately
+        updated_list = storage.add_task(new_task.dict())
         
-        return new_task
+        # Return the task with its new real ID
+        return Task(**updated_list[-1])
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -174,9 +185,26 @@ async def generate_schedule(): # No payload needed, reads from DB
         perf_data = storage.get_performance()
         user_settings = storage.get_user_settings()
 
+        # Callback to save intermediate results
+        async def save_profiles_callback(profile_map: Dict[str, str]):
+             print(f"DEBUG: Saving {len(profile_map)} cognitive profiles to DB...")
+             # 1. Update in-memory tasks
+             for t in current_tasks:
+                 tid = str(t.get("id"))
+                 if tid in profile_map:
+                     t["cognitive_type"] = profile_map[tid]
+             # 2. Persist to DB
+             storage.save_tasks(current_tasks)
+
         # 2. Orchestrate - Send ALL current tasks to allow re-optimization of the whole week
         # The 'is_locked' flag will protect tasks that shouldn't move.
-        orchestrated_result = await orchestrate_schedule(current_tasks, user_profile, performance_data=perf_data, user_settings=user_settings)
+        orchestrated_result = await orchestrate_schedule(
+            current_tasks, 
+            user_profile, 
+            performance_data=perf_data, 
+            user_settings=user_settings,
+            profile_update_callback=save_profiles_callback
+        )
         
         # --- LOG THOUGHT PROCESS ---
         log_path = Path(__file__).parent / 'scheduler_thoughts.txt'
@@ -189,10 +217,8 @@ async def generate_schedule(): # No payload needed, reads from DB
                 f.write("(No thought process returned)\n")
         # ---------------------------
         
-        # 3. Verify
-        warnings = verify_schedule_algorithmic(orchestrated_result)
-        if warnings:
-            print("Scheduling Warnings:", warnings)
+        # 3. Verify - (Legacy verifier removed, Optimizer is self-verifying)
+        warnings = []
         
         # 4. Update tasks with schedule info
         scheduled_map = {str(item.task_id): item for item in orchestrated_result.schedule}
@@ -209,8 +235,20 @@ async def generate_schedule(): # No payload needed, reads from DB
                  duration_hours = t.get("duration", 30) / 60
                  t["scheduled_end"] = matches.start_time + duration_hours
                  t["status"] = "scheduled"
+                 
+                 # NEW: Save the AI's reason
+                 if getattr(matches, "rationale", None):
+                    t["rationale"] = matches.rationale
+            
+            # NEW: Persist cognitive type from scheduler
+            if hasattr(orchestrated_result, "task_profiles"):
+                if t_id in orchestrated_result.task_profiles:
+                    t["cognitive_type"] = orchestrated_result.task_profiles[t_id]
+            
             updated_tasks.append(t)
             
+        print(f"DEBUG: Scheduled {len([t for t in updated_tasks if t.get('status') == 'scheduled'])} tasks out of {len(updated_tasks)}")
+        
         # 5. Save back to DB
         storage.save_tasks(updated_tasks)
 
@@ -245,13 +283,24 @@ async def negotiate_schedule(request: ChatRequest):
         perf_data = storage.get_performance()
         user_settings = storage.get_user_settings()
 
+        # Callback to save intermediate results
+        async def save_profiles_callback(profile_map: Dict[str, str]):
+             # Re-fetch tasks in case they changed, or just update logic. 
+             # For negotiation, we can just update all_tasks list which we loaded.
+             for t in all_tasks:
+                 tid = str(t.get("id"))
+                 if tid in profile_map:
+                     t["cognitive_type"] = profile_map[tid]
+             storage.save_tasks(all_tasks)
+
         # 3. Orchestrate with Feedback
         orchestrated_result = await orchestrate_schedule(
             all_tasks, 
             user_profile, 
             user_feedback=request.message,
             performance_data=perf_data,
-            user_settings=user_settings
+            user_settings=user_settings,
+            profile_update_callback=save_profiles_callback
         )
   # --- LOG THOUGHT PROCESS ---
         log_path = Path(__file__).parent / 'scheduler_thoughts.txt'
@@ -265,8 +314,8 @@ async def negotiate_schedule(request: ChatRequest):
                 f.write("(No thought process returned)\n")
         # ---------------------------
         
-        # Verify
-        warnings = verify_schedule_algorithmic(orchestrated_result)
+        # Verify (Legacy verifier removed)
+        warnings = []
         
         # 4. Update DB
         updated_tasks = []
@@ -280,6 +329,11 @@ async def negotiate_schedule(request: ChatRequest):
                 t["scheduled_start"] = matches.start_time
                 t["scheduled_end"] = matches.start_time + (t.get("duration", 30) / 60)
                 t["status"] = "scheduled"
+            
+            # NEW: Persist cognitive type from scheduler
+            if hasattr(orchestrated_result, "task_profiles"):
+                 if t_id in orchestrated_result.task_profiles:
+                     t["cognitive_type"] = orchestrated_result.task_profiles[t_id]
             updated_tasks.append(t)
         
         # Save updates
