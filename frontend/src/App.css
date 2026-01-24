@@ -16,6 +16,9 @@
   width: 280px;
   /* Slightly narrower */
   flex-shrink: 0;
+  overflow-y: auto;
+  padding-right: 4px;
+  /* Space for scrollbar */
 }
 
 .layout-center {
@@ -241,6 +244,8 @@ h3 {
   padding-top: 1rem;
   border-top: 1px solid transparent;
   /* Optional divider */
+  position: relative;
+  z-index: 20;
 }
 
 .orchestrate-btn {
@@ -323,20 +328,24 @@ h3 {
   background: #f8fafc;
 }
 
-/* Assistant Chat */
 .chat-interface {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  height: 400px;
+  /* Fixed height for chat area to allow scrolling within */
+  background: rgba(255, 255, 255, 0.4);
+  border-radius: 12px;
+  padding: 8px;
 }
 
 .chat-window {
   flex: 1;
   overflow-y: auto;
-  padding: 0.5rem 0;
+  padding: 0.5rem;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  margin-bottom: 8px;
 }
 
 .message {
@@ -460,4 +469,135 @@ h3 {
   border-width: 6px;
   border-style: solid;
   border-color: rgba(255, 255, 255, 0.95) transparent transparent transparent;
+}
+
+/* --- UNIFIED MODAL SYSTEM --- */
+.report-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(15, 23, 42, 0.4);
+  /* Darker slate overlay */
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.report-modal {
+  background: white;
+  padding: 2rem;
+  border-radius: 24px;
+  width: 420px;
+  max-width: 95vw;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  animation: modalPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  border: 1px solid var(--color-border);
+}
+
+@keyframes modalPop {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.modal-input {
+  width: 100%;
+  padding: 10px 15px;
+  border: 2px solid #edf2f7;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  outline: none;
+  transition: all 0.2s;
+}
+
+.modal-input:focus {
+  border-color: var(--color-primary);
+  background: #fff;
+  box-shadow: 0 0 0 3px var(--color-primary-soft);
+}
+
+.form-group label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 700;
+  margin-bottom: 6px;
+  color: var(--text-secondary);
+}
+
+.modal-submit-btn {
+  width: 100%;
+  padding: 0.85rem;
+  background: linear-gradient(135deg, var(--color-primary) 0%, #4f46e5 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+}
+
+.modal-submit-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.3);
+}
+
+.slide-in {
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Global Utilities */
+.btn-primary {
+  background: var(--color-primary);
+  color: white;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 0.6rem 1.2rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-primary:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  background: white;
+  color: var(--text-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 0.6rem 1.2rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.btn-secondary:hover {
+  background: #f8fafc;
 }

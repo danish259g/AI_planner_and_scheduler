@@ -12,7 +12,7 @@ def verify_schedule_algorithmic(schedule_data: WeeklySchedule) -> List[str]:
     tasks = schedule_data.schedule
     
     # Sort by day and start time
-    week_order = {"Mon": 0, "Tue": 1, "Wed": 2, "Thu": 3, "Fri": 4, "Sat": 5, "Sun": 6}
+    week_order = {"Sun": 0, "Mon": 1, "Tue": 2, "Wed": 3, "Thu": 4, "Fri": 5, "Sat": 6}
     sorted_tasks = sorted(tasks, key=lambda t: (week_order.get(t.day, 99), t.start_time))
 
     # Check for overlaps
@@ -20,7 +20,7 @@ def verify_schedule_algorithmic(schedule_data: WeeklySchedule) -> List[str]:
         t1 = sorted_tasks[i]
         
         # Range check
-        if not (0 <= t1.start_time <= 23):
+        if not (7 <= t1.start_time <= 23):
              errors.append(f"Task {t1.task_id} has invalid start time: {t1.start_time}")
         
         # End time check (approximate, since we only have duration in mins)
@@ -42,5 +42,11 @@ def verify_schedule_algorithmic(schedule_data: WeeklySchedule) -> List[str]:
             
             if t2_start < t1_end:
                  errors.append(f"Overlap detected on {t1.day} between Task {t1.task_id} and Task {t2.task_id}.")
-                 
+
+    # HEURISTIC CHECK: Warn if any day has > 4 hours continuous block without a break?
+    # For now, just a simple length check on individual tasks
+    for t in tasks:
+        if t.duration_mins > 240:
+             errors.append(f"Heuristic Warning: Task {t.task_id} is over 4 hours long. Consider breaking it up.")
+             
     return errors

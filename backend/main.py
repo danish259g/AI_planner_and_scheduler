@@ -1,9 +1,10 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from typing import List, Optional, Any
+from typing import List, Optional, Any, Dict
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 import random
+from pathlib import Path
 from backend.interpreter import interpret_task as interpret_task_logic
 from backend.scheduler import orchestrate_schedule
 from backend.verifier import verify_schedule_algorithmic
@@ -61,7 +62,32 @@ class ChatRequest(BaseModel):
     message: str
     history: Optional[List[ChatMessage]] = None
 
+class PerformanceUpdate(BaseModel):
+    category: str
+    score: Optional[float] = None
+    self_eval: Optional[int] = None
+
 # --- Endpoints ---
+
+@app.get("/api/performance")
+async def get_performance():
+    return storage.get_performance()
+
+@app.post("/api/performance")
+async def update_performance(data: PerformanceUpdate):
+    return storage.update_performance(data.category, data.score, data.self_eval)
+
+@app.post("/api/performance/reset")
+async def reset_performance():
+    return storage.reset_performance()
+
+@app.get("/api/settings")
+async def get_settings():
+    return storage.get_user_settings()
+
+@app.post("/api/settings")
+async def update_settings(settings: Dict[str, Any]):
+    return storage.update_user_settings(settings)
 
 @app.get("/")
 async def root():
@@ -69,6 +95,7 @@ async def root():
 
 @app.get("/api/tasks", response_model=List[Task])
 async def get_tasks():
+    print("DEBUG: Fetching tasks from storage...")
     # Helper to map old DB format if needed, though we should clear DB for fresh start ideally
     raw_tasks = storage.load_tasks()
     # Ensure they match the schema (e.g. rename title -> name if old data exists)
@@ -98,7 +125,7 @@ async def interpret_task(input: TaskInput):
     """Real interpreter using Gemini."""
     try:
         data = await interpret_task_logic(input.raw_text)
-        return Task(
+        new_task = Task(
             id=str(random.randint(1000, 9999)), 
             name=data.name,
             duration=data.duration,
@@ -112,6 +139,11 @@ async def interpret_task(input: TaskInput):
             comments=data.comments,
             status="interpreted"
         )
+        
+        # Save to DB immediately so it shows up in the UI/Task Bank
+        storage.add_task(new_task.dict())
+        
+        return new_task
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -131,18 +163,31 @@ async def generate_schedule(): # No payload needed, reads from DB
              if "duration_mins" in t and "duration" not in t: t["duration"] = t["duration_mins"]
              current_tasks.append(t)
 
-        # Filter for pending tasks
-        pending_tasks = [t for t in current_tasks if t.get("status") == "pending"]
-        if not pending_tasks:
-            # If no pending tasks, return current tasks as is
-            return Schedule(week_id="empty", tasks=current_tasks)
+        # Filter for pending tasks - REMOVED. We want to re-orchestrate the whole week.
+        # pending_tasks = [t for t in current_tasks if t.get("status") == "pending"]
+        # if not pending_tasks:
+        #     # If no pending tasks, return current tasks as is
+        #     return Schedule(week_id="empty", tasks=current_tasks)
 
-        # Get User Profile
+        # Get Performance Data
         user_profile = storage.get_user_profile()
-        print(f"Orchestrating with User Profile: {user_profile}")
+        perf_data = storage.get_performance()
+        user_settings = storage.get_user_settings()
+
+        # 2. Orchestrate - Send ALL current tasks to allow re-optimization of the whole week
+        # The 'is_locked' flag will protect tasks that shouldn't move.
+        orchestrated_result = await orchestrate_schedule(current_tasks, user_profile, performance_data=perf_data, user_settings=user_settings)
         
-        # 2. Orchestrate (only pending or all? Let's do all for now to re-optimize)
-        orchestrated_result = await orchestrate_schedule(pending_tasks, user_profile)
+        # --- LOG THOUGHT PROCESS ---
+        log_path = Path(__file__).parent / 'scheduler_thoughts.txt'
+        with open(log_path, 'a', encoding='utf-8') as f:
+            f.write(f"\n\n--- Orchestration Run (Generate) ---\n")
+            if orchestrated_result.thought_process:
+                for step in orchestrated_result.thought_process:
+                    f.write(f"> {step}\n")
+            else:
+                f.write("(No thought process returned)\n")
+        # ---------------------------
         
         # 3. Verify
         warnings = verify_schedule_algorithmic(orchestrated_result)
@@ -194,30 +239,48 @@ def update_profile(data: UserProfile):
 async def negotiate_schedule(request: ChatRequest):
     """Refine schedule based on user chat message"""
     try:
-        tasks = storage.load_tasks()
-        
-        # Get User Profile
+        # 2. Fetch all tasks to give AI context
+        all_tasks = storage.load_tasks()
         user_profile = storage.get_user_profile()
-        
-        # Call orchestration with user feedback
-        orchestrated_result = await orchestrate_schedule(tasks, user_profile=user_profile, user_feedback=request.message)
+        perf_data = storage.get_performance()
+        user_settings = storage.get_user_settings()
+
+        # 3. Orchestrate with Feedback
+        orchestrated_result = await orchestrate_schedule(
+            all_tasks, 
+            user_profile, 
+            user_feedback=request.message,
+            performance_data=perf_data,
+            user_settings=user_settings
+        )
+  # --- LOG THOUGHT PROCESS ---
+        log_path = Path(__file__).parent / 'scheduler_thoughts.txt'
+        with open(log_path, 'a', encoding='utf-8') as f:
+            f.write(f"\n\n--- Orchestration Run (Negotiate) ---\n")
+            f.write(f"User Feedback: {request.message}\n")
+            if orchestrated_result.thought_process:
+                for step in orchestrated_result.thought_process:
+                    f.write(f"> {step}\n")
+            else:
+                f.write("(No thought process returned)\n")
+        # ---------------------------
         
         # Verify
         warnings = verify_schedule_algorithmic(orchestrated_result)
         
-        # Update DB
+        # 4. Update DB
         updated_tasks = []
-        for ot in orchestrated_result.schedule:
-            # Find original task
-            # OT task_id might be int, DB might be string/int mix
-            t_orig = next((t for t in tasks if str(t["id"]) == str(ot.task_id)), None)
-            
-            if t_orig:
-                t_orig["scheduled_day"] = ot.day
-                t_orig["scheduled_start"] = ot.start_time
-                t_orig["scheduled_end"] = ot.start_time + (t_orig.get("duration", 30) / 60)
-                t_orig["status"] = "scheduled"
-                updated_tasks.append(t_orig)
+        scheduled_map = {str(item.task_id): item for item in orchestrated_result.schedule}
+
+        for t in all_tasks:
+            t_id = str(t.get("id"))
+            matches = scheduled_map.get(t_id)
+            if matches:
+                t["scheduled_day"] = matches.day
+                t["scheduled_start"] = matches.start_time
+                t["scheduled_end"] = matches.start_time + (t.get("duration", 30) / 60)
+                t["status"] = "scheduled"
+            updated_tasks.append(t)
         
         # Save updates
         storage.save_tasks(updated_tasks)

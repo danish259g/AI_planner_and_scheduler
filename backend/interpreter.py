@@ -27,6 +27,8 @@ class Task(BaseModel):
     end_time: Optional[str] = Field(description="Specific end time if mentioned. Format as HH:MM if possible.")
     comments: str = Field(description="Any extra useful information or context extracted from the user input")
 
+from backend.task_catalog import TASK_CATALOG
+
 async def interpret_task(text: str) -> Task:
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
@@ -34,19 +36,47 @@ async def interpret_task(text: str) -> Task:
 
     client = genai.Client(api_key=api_key)
 
+    # Format catalog for prompt
+    catalog_str = json.dumps(TASK_CATALOG, indent=2)
+
     prompt = f"""
-    You are a semantic extraction agent. Extract task information from this input: "{text}".
+    You are a specialized Semantic Extractor for a Psychometric Test Study Planner. 
+    Your job is to extract study task information from the user input: "{text}".
+
+    [STRICT DOMAIN ENFORCEMENT]
+    - This system ONLY handles study tasks for the Psychometric Entrance Test.
+    - If the user input is clearly NOT study-related, tag as 'Personal'/'Errand' with 'Low' priority.
+
+    [TASK CATALOG - BASE NAMES]
+    The user's intent must map to one of these BASE names, but you strict formatting rules apply:
+    {list(TASK_CATALOG.keys())}
+
+    [NAMING CONVENTIONS - STRICT]
+    1. **Progressive Tasks** (Geometry, Algebra, etc.):
+       - If a number/chapter is mentioned, APPEND it. 
+       - Format: "{{Base Name}} {{Number}}" (e.g., "Geometry 1", "Algebra 5").
+    2. **Vocabulary**:
+       - ALWAYS Prepend language (ENG/HEB) if detectable (Default to ENG).
+       - APPEND unit number if mentioned.
+       - Format: "{{Lang}} Vocabulary {{Number}}" (e.g., "ENG Vocabulary 1", "HEB Vocabulary 2").
+    3. **Standard Tasks** (Essay, Simulation):
+       - Use the Base Name exactly (e.g., "Essay Writing").
+
+    [FIELDS TO EXTRACT]
+    - **name**: The formatted name following conventions above.
+    - **duration**: In minutes. Use defaults unless user specifies otherwise.
+    - **tag**: Use the tag associated with the chosen BASE name.
+    - **location**: Any remaining details (e.g., "Triangles", "Review").
+    - **priority**: 'High' if urgent/weakness, else 'Medium'.
+    - **is_locked**: True ONLY if specific time is mandated.
+    - **day/start_time/end_time**: As specified.
+    - **comments**: Original context.
     
-    Guidelines:
-    - **name**: Concise title.
-    - **duration**: In minutes. Infer logically (e.g. "quick call" = 15, "workout" = 60) if not stated.
-    - **tag**: Classify into a broad category like Work, Personal, Health, Study, Home, Errand.
-    - **location**: Infer the physical context. Defaults to "Home" or "Office" based on task type if unclear.
-    - **priority**: Infer based on urgency words ("urgent", "must", "important") or nature of task. Default to Medium.
-    - **is_locked**: Set to True ONLY if the user specifies a specific time (e.g. "at 5pm", "in the morning") OR specific day.
-    - **day**: Extract specific day if present (e.g. "on Monday" -> "Mon"). Use Mon, Tue, Wed, Thu, Fri, Sat, Sun.
-    - **start_time/end_time**: Extract specific time constraints if present (e.g. "at 5pm" -> start_time="17:00"). Use 24h format HH:MM.
-    - **comments**: Store ONLY extra context or nuances that do NOT fit into the fields above. Do NOT repeat the day or time here if they were successfully extracted to their own fields. If everything is covered, leave empty.
+    [INFERENCE RULES]
+    - Input: "Do geometry chapter 1" -> name="Geometry 1", tag="Quantitative"
+    - Input: "Learn english words unit 5" -> name="ENG Vocabulary 5", tag="English"
+    - Input: "Hebrew analogies" -> name="HEB Analogies", tag="Verbal" (Verify 'Analogies' is in catalog)
+    - Input: "Essay" -> name="Essay Writing"
     """
 
     # Single shot execution (No retries)
