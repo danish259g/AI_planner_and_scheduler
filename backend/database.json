@@ -4,7 +4,7 @@
       "id": "1",
       "name": "Data Interpretation",
       "duration": 45,
-      "status": "scheduled",
+      "status": "pending",
       "tag": "Quantitative",
       "location": "Home",
       "priority": "Medium",
@@ -13,9 +13,6 @@
       "start_time": null,
       "end_time": null,
       "comments": "",
-      "scheduled_day": "Mon",
-      "scheduled_start": 12.75,
-      "scheduled_end": 13.5,
       "rationale": "Optimized for Analytical performance",
       "cognitive_type": "Analytical"
     },
@@ -23,7 +20,7 @@
       "id": "2",
       "name": "Reading Comprehension",
       "duration": 40,
-      "status": "scheduled",
+      "status": "pending",
       "tag": "English",
       "location": "Home",
       "priority": "Medium",
@@ -33,16 +30,13 @@
       "end_time": null,
       "comments": "",
       "cognitive_type": "General",
-      "rationale": "Optimized for General performance",
-      "scheduled_day": "Tue",
-      "scheduled_start": 15.75,
-      "scheduled_end": 16.416666666666668
+      "rationale": "Optimized for General performance"
     },
     {
       "id": "3",
       "name": "Restatements",
       "duration": 20,
-      "status": "scheduled",
+      "status": "pending",
       "tag": "English",
       "location": "Home",
       "priority": "Medium",
@@ -52,16 +46,13 @@
       "end_time": null,
       "comments": "",
       "cognitive_type": "Creative",
-      "rationale": "Optimized for Creative performance",
-      "scheduled_day": "Wed",
-      "scheduled_start": 12.5,
-      "scheduled_end": 12.833333333333334
+      "rationale": "Optimized for Creative performance"
     },
     {
       "id": "4",
       "name": "Timed Section (Verbal)",
       "duration": 20,
-      "status": "scheduled",
+      "status": "pending",
       "tag": "Simulation",
       "location": "Home",
       "priority": "Medium",
@@ -71,16 +62,13 @@
       "end_time": null,
       "comments": "",
       "cognitive_type": "General",
-      "rationale": "Optimized for General performance",
-      "scheduled_day": "Thu",
-      "scheduled_start": 13.25,
-      "scheduled_end": 13.583333333333334
+      "rationale": "Optimized for General performance"
     },
     {
       "id": "5",
       "name": "Timed Section (Verbal)",
       "duration": 20,
-      "status": "scheduled",
+      "status": "pending",
       "tag": "Simulation",
       "location": "Home",
       "priority": "Medium",
@@ -90,16 +78,13 @@
       "end_time": null,
       "comments": "",
       "cognitive_type": "General",
-      "rationale": "Optimized for General performance",
-      "scheduled_day": "Fri",
-      "scheduled_start": 13.25,
-      "scheduled_end": 13.583333333333334
+      "rationale": "Optimized for General performance"
     },
     {
       "id": "6",
       "name": "Word Problems",
       "duration": 45,
-      "status": "scheduled",
+      "status": "pending",
       "tag": "Quantitative",
       "location": "Home",
       "priority": "Medium",
@@ -109,16 +94,13 @@
       "end_time": null,
       "comments": "",
       "cognitive_type": "Analytical",
-      "rationale": "Optimized for Analytical performance",
-      "scheduled_day": "Sat",
-      "scheduled_start": 12.75,
-      "scheduled_end": 13.5
+      "rationale": "Optimized for Analytical performance"
     },
     {
       "id": "7",
       "name": "Word Problems",
       "duration": 45,
-      "status": "scheduled",
+      "status": "pending",
       "tag": "Quantitative",
       "location": "Home",
       "priority": "Medium",
@@ -128,16 +110,13 @@
       "end_time": null,
       "comments": "",
       "cognitive_type": "Analytical",
-      "rationale": "Optimized for Analytical performance",
-      "scheduled_day": "Sun",
-      "scheduled_start": 14.75,
-      "scheduled_end": 15.5
+      "rationale": "Optimized for Analytical performance"
     },
     {
       "id": "8",
       "name": "Geometry",
       "duration": 45,
-      "status": "scheduled",
+      "status": "pending",
       "tag": "Quantitative",
       "location": "Home",
       "priority": "Medium",
@@ -147,16 +126,13 @@
       "end_time": null,
       "comments": "",
       "cognitive_type": "Analytical",
-      "rationale": "Optimized for Analytical performance",
-      "scheduled_day": "Mon",
-      "scheduled_start": 12.0,
-      "scheduled_end": 12.75
+      "rationale": "Optimized for Analytical performance"
     },
     {
       "id": "9",
       "name": "Reading Comprehension",
       "duration": 40,
-      "status": "scheduled",
+      "status": "pending",
       "tag": "English",
       "location": "Home",
       "priority": "Medium",
@@ -166,16 +142,13 @@
       "end_time": null,
       "comments": "",
       "cognitive_type": "General",
-      "rationale": "Optimized for General performance",
-      "scheduled_day": "Tue",
-      "scheduled_start": 16.75,
-      "scheduled_end": 17.416666666666668
+      "rationale": "Optimized for General performance"
     },
     {
       "id": "10",
       "name": "Vocab Memorization",
       "duration": 25,
-      "status": "scheduled",
+      "status": "pending",
       "tag": "English",
       "location": "Home",
       "priority": "Medium",
@@ -185,16 +158,13 @@
       "end_time": null,
       "comments": "",
       "cognitive_type": "Memory",
-      "rationale": "Optimized for Memory performance",
-      "scheduled_day": "Wed",
-      "scheduled_start": 13.25,
-      "scheduled_end": 13.666666666666666
+      "rationale": "Optimized for Memory performance"
     },
     {
       "id": "11",
       "name": "Reading a Book",
       "duration": 30,
-      "status": "scheduled",
+      "status": "pending",
       "tag": "English",
       "location": "Home",
       "priority": "Medium",
@@ -204,16 +174,13 @@
       "end_time": null,
       "comments": "",
       "cognitive_type": "General",
-      "rationale": "Optimized for General performance",
-      "scheduled_day": "Thu",
-      "scheduled_start": 12.0,
-      "scheduled_end": 12.5
+      "rationale": "Optimized for General performance"
     },
     {
       "id": "12",
       "name": "Argumentative para",
       "duration": 30,
-      "status": "scheduled",
+      "status": "pending",
       "tag": "Essay",
       "location": "Home",
       "priority": "Medium",
@@ -222,9 +189,6 @@
       "start_time": null,
       "end_time": null,
       "comments": "",
-      "scheduled_day": "Fri",
-      "scheduled_start": 12.0,
-      "scheduled_end": 12.5,
       "rationale": "Optimized for Creative performance",
       "cognitive_type": "Creative"
     },
@@ -232,7 +196,7 @@
       "id": "13",
       "name": "Critical Thinking para",
       "duration": 30,
-      "status": "scheduled",
+      "status": "pending",
       "tag": "Essay",
       "location": "Home",
       "priority": "Medium",
@@ -242,16 +206,13 @@
       "end_time": null,
       "comments": "",
       "cognitive_type": "Creative",
-      "rationale": "Optimized for Creative performance",
-      "scheduled_day": "Sat",
-      "scheduled_start": 13.5,
-      "scheduled_end": 14.0
+      "rationale": "Optimized for Creative performance"
     },
     {
       "id": "14",
       "name": "Analyze Sample",
       "duration": 30,
-      "status": "scheduled",
+      "status": "pending",
       "tag": "Essay",
       "location": "Home",
       "priority": "Medium",
@@ -261,16 +222,13 @@
       "end_time": null,
       "comments": "",
       "cognitive_type": "Creative",
-      "rationale": "Optimized for Creative performance",
-      "scheduled_day": "Sun",
-      "scheduled_start": 15.5,
-      "scheduled_end": 16.0
+      "rationale": "Optimized for Creative performance"
     },
     {
       "id": "15",
       "name": "Logic & Inference",
       "duration": 45,
-      "status": "scheduled",
+      "status": "pending",
       "tag": "Verbal",
       "location": "Home",
       "priority": "Medium",
@@ -280,16 +238,13 @@
       "end_time": null,
       "comments": "",
       "cognitive_type": "Analytical",
-      "rationale": "Optimized for Analytical performance",
-      "scheduled_day": "Mon",
-      "scheduled_start": 16.75,
-      "scheduled_end": 17.5
+      "rationale": "Optimized for Analytical performance"
     },
     {
       "id": "16",
       "name": "Reading Comprehension",
       "duration": 50,
-      "status": "completed",
+      "status": "pending",
       "tag": "Verbal",
       "location": "Home",
       "priority": "Medium",
@@ -298,9 +253,6 @@
       "start_time": null,
       "end_time": null,
       "comments": "",
-      "scheduled_day": "Tue",
-      "scheduled_start": 14.75,
-      "scheduled_end": 15.583333333333334,
       "rationale": "Optimized for General performance",
       "cognitive_type": "General"
     },
@@ -308,7 +260,7 @@
       "id": "17",
       "name": "Reading a Book",
       "duration": 30,
-      "status": "scheduled",
+      "status": "pending",
       "tag": "Verbal",
       "location": "Home",
       "priority": "Medium",
@@ -318,16 +270,13 @@
       "end_time": null,
       "comments": "",
       "cognitive_type": "General",
-      "rationale": "Optimized for General performance",
-      "scheduled_day": "Wed",
-      "scheduled_start": 12.0,
-      "scheduled_end": 12.5
+      "rationale": "Optimized for General performance"
     },
     {
       "id": "18",
       "name": "Analogies",
       "duration": 29,
-      "status": "scheduled",
+      "status": "pending",
       "tag": "Verbal",
       "location": "Home",
       "priority": "Medium",
@@ -336,9 +285,6 @@
       "start_time": null,
       "end_time": null,
       "comments": "",
-      "scheduled_day": "Thu",
-      "scheduled_start": 12.75,
-      "scheduled_end": 13.233333333333333,
       "rationale": "Optimized for Analytical performance",
       "cognitive_type": "Analytical"
     },
@@ -346,7 +292,7 @@
       "id": "19",
       "name": "Critical Thinking para",
       "duration": 30,
-      "status": "scheduled",
+      "status": "pending",
       "tag": "Essay",
       "location": "Home",
       "priority": "Medium",
@@ -356,16 +302,13 @@
       "end_time": null,
       "comments": "",
       "cognitive_type": "Creative",
-      "rationale": "Optimized for Creative performance",
-      "scheduled_day": "Fri",
-      "scheduled_start": 12.75,
-      "scheduled_end": 13.25
+      "rationale": "Optimized for Creative performance"
     },
     {
       "id": "20",
       "name": "Intro & Conclusion",
       "duration": 30,
-      "status": "scheduled",
+      "status": "pending",
       "tag": "Essay",
       "location": "Home",
       "priority": "Medium",
@@ -375,16 +318,13 @@
       "end_time": null,
       "comments": "",
       "cognitive_type": "Creative",
-      "rationale": "Optimized for Creative performance",
-      "scheduled_day": "Sat",
-      "scheduled_start": 12.0,
-      "scheduled_end": 12.5
+      "rationale": "Optimized for Creative performance"
     },
     {
       "id": "21",
       "name": "Algebra",
       "duration": 45,
-      "status": "scheduled",
+      "status": "pending",
       "tag": "Quantitative",
       "location": "Home",
       "priority": "Medium",
@@ -394,16 +334,13 @@
       "end_time": null,
       "comments": "",
       "cognitive_type": "Analytical",
-      "rationale": "Optimized for Analytical performance",
-      "scheduled_day": "Sun",
-      "scheduled_start": 14.0,
-      "scheduled_end": 14.75
+      "rationale": "Optimized for Analytical performance"
     },
     {
       "id": "22",
       "name": "Geometry",
       "duration": 45,
-      "status": "scheduled",
+      "status": "pending",
       "tag": "Quantitative",
       "location": "Home",
       "priority": "Medium",
@@ -413,10 +350,7 @@
       "end_time": null,
       "comments": "",
       "cognitive_type": "Analytical",
-      "rationale": "Optimized for Analytical performance",
-      "scheduled_day": "Mon",
-      "scheduled_start": 16.0,
-      "scheduled_end": 16.75
+      "rationale": "Optimized for Analytical performance"
     }
   ],
   "user_profile": "",
