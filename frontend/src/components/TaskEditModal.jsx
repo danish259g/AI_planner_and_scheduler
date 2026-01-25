@@ -70,7 +70,7 @@ export default function TaskEditModal({ task, onClose, onUpdateTask, onUpdatePer
             duration: parseInt(duration),
             scheduled_start: toDecimalHour(startTime),
             scheduled_day: day,
-            status: isCompleted ? 'completed' : 'pending',
+            status: isCompleted ? 'completed' : 'scheduled',
             reportData // Save the results back to the task itself
         });
 

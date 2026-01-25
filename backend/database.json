@@ -13,11 +13,11 @@
       "start_time": null,
       "end_time": null,
       "comments": "",
-      "cognitive_type": "Analytical",
-      "rationale": "Optimized for Analytical performance",
       "scheduled_day": "Mon",
       "scheduled_start": 12.75,
-      "scheduled_end": 13.5
+      "scheduled_end": 13.5,
+      "rationale": "Optimized for Analytical performance",
+      "cognitive_type": "Analytical"
     },
     {
       "id": "2",
@@ -222,11 +222,11 @@
       "start_time": null,
       "end_time": null,
       "comments": "",
-      "cognitive_type": "Creative",
-      "rationale": "Optimized for Creative performance",
       "scheduled_day": "Fri",
       "scheduled_start": 12.0,
-      "scheduled_end": 12.5
+      "scheduled_end": 12.5,
+      "rationale": "Optimized for Creative performance",
+      "cognitive_type": "Creative"
     },
     {
       "id": "13",
@@ -326,7 +326,7 @@
     {
       "id": "18",
       "name": "Analogies",
-      "duration": 30,
+      "duration": 29,
       "status": "scheduled",
       "tag": "Verbal",
       "location": "Home",
@@ -336,11 +336,11 @@
       "start_time": null,
       "end_time": null,
       "comments": "",
-      "cognitive_type": "Analytical",
-      "rationale": "Optimized for Analytical performance",
       "scheduled_day": "Thu",
       "scheduled_start": 12.75,
-      "scheduled_end": 13.25
+      "scheduled_end": 13.233333333333333,
+      "rationale": "Optimized for Analytical performance",
+      "cognitive_type": "Analytical"
     },
     {
       "id": "19",
@@ -422,42 +422,30 @@
   "user_profile": "",
   "performance_data": {
     "Quantitative": {
-      "score": 90.0,
-      "self_eval": 8,
-      "count": 4
+      "score": 0,
+      "self_eval": 5,
+      "count": 0
     },
     "Verbal": {
-      "score": 81.95652173913044,
-      "self_eval": 4,
-      "count": 2
+      "score": 0,
+      "self_eval": 5,
+      "count": 0
     },
     "English": {
-      "score": 100.0,
-      "self_eval": 10,
-      "count": 1
+      "score": 0,
+      "self_eval": 5,
+      "count": 0
     },
     "Essay": {
-      "score": 85.0,
+      "score": 0,
       "self_eval": 5,
-      "count": 1
+      "count": 0
     }
   },
   "user_settings": {
     "study_start": 9,
     "study_end": 18,
     "constraints": [
-      {
-        "name": "class",
-        "day": "Sun",
-        "start": 8,
-        "end": 14
-      },
-      {
-        "name": "class",
-        "day": "Tue",
-        "start": 8,
-        "end": 14
-      },
       {
         "name": "\u05e7\u05d9\u05d3\u05d5\u05e9",
         "day": "Fri",

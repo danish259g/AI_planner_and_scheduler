@@ -28,8 +28,11 @@ export default function CalendarView({ tasks, userSettings, onTaskMove, onTaskUp
 
         // Add Constraints
         if (userSettings?.constraints) {
-            userSettings.constraints.filter(c => c.day === day && Math.floor(c.start) === hour)
-                .forEach(c => allItems.push({ ...c, type: 'constraint' }));
+            userSettings.constraints.forEach((c, originalIndex) => {
+                if (c.day === day && Math.floor(c.start) === hour) {
+                    allItems.push({ ...c, type: 'constraint', originalIndex });
+                }
+            });
         }
 
         return allItems;
@@ -100,7 +103,7 @@ export default function CalendarView({ tasks, userSettings, onTaskMove, onTaskUp
                                             <div
                                                 key={`const-${idx}`}
                                                 className="calendar-task constraint-block"
-                                                onClick={(e) => { e.stopPropagation(); onConstraintClick && onConstraintClick(item, idx); }}
+                                                onClick={(e) => { e.stopPropagation(); onConstraintClick && onConstraintClick(item, item.originalIndex); }}
                                                 style={{
                                                     height: `${(duration / 60) * 3}rem`,
                                                     position: 'absolute',
