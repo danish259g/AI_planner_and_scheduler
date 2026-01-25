@@ -62,12 +62,20 @@ export default function TaskBank({ tasks, onDeleteTask, onOrchestrate, onTaskUpd
                                     e.stopPropagation();
                                     const day = window.prompt("Enter Day (Sun, Mon, Tue, Wed, Thu, Fri, Sat):", "Sun");
                                     if (!day) return;
-                                    const hour = window.prompt("Enter Start Hour (0-23):", "10");
-                                    if (!hour) return;
+                                    const hourStr = window.prompt("Enter Start Hour (0-23):", "10");
+                                    if (!hourStr) return;
+
+                                    const hour = parseFloat(hourStr);
+                                    if (isNaN(hour)) {
+                                        alert("Invalid hour entered");
+                                        return;
+                                    }
+
+                                    console.log("Scheduling task:", task.id, day, hour);
 
                                     onTaskUpdate(task.id, {
                                         scheduled_day: day,
-                                        scheduled_start: parseFloat(hour),
+                                        scheduled_start: hour,
                                         status: 'scheduled'
                                     });
                                 }}

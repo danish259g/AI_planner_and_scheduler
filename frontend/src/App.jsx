@@ -262,6 +262,7 @@ function App() {
 
     const originalTask = tasks[taskIndex];
     const updatedTask = { ...originalTask, ...updates };
+    console.log("Updating task:", taskId, updates, updatedTask);
 
     // Recalculate scheduled_end if start or duration changed
     if (updatedTask.scheduled_start !== undefined && (updatedTask.duration || originalTask.duration)) {
