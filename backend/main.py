@@ -48,8 +48,7 @@ class Task(BaseModel):
     rationale: Optional[str] = ""
     cognitive_type: Optional[str] = None
 
-class UserProfile(BaseModel):
-    profile: str
+
 
 class Schedule(BaseModel):
     week_id: str
@@ -181,7 +180,6 @@ async def generate_schedule(): # No payload needed, reads from DB
         #     return Schedule(week_id="empty", tasks=current_tasks)
 
         # Get Performance Data
-        user_profile = storage.get_user_profile()
         perf_data = storage.get_performance()
         user_settings = storage.get_user_settings()
 
@@ -200,7 +198,6 @@ async def generate_schedule(): # No payload needed, reads from DB
         # The 'is_locked' flag will protect tasks that shouldn't move.
         orchestrated_result = await orchestrate_schedule(
             current_tasks, 
-            user_profile, 
             performance_data=perf_data, 
             user_settings=user_settings,
             profile_update_callback=save_profiles_callback
@@ -218,7 +215,7 @@ async def generate_schedule(): # No payload needed, reads from DB
         # ---------------------------
         
         # 3. Verify - (Legacy verifier removed, Optimizer is self-verifying)
-        warnings = []
+        warnings = getattr(orchestrated_result, "warnings", [])
         
         # 4. Update tasks with schedule info
         scheduled_map = {str(item.task_id): item for item in orchestrated_result.schedule}
@@ -272,14 +269,7 @@ async def generate_schedule(): # No payload needed, reads from DB
         print(f"Scheduling error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/api/profile")
-def get_profile():
-    return {"profile": storage.get_user_profile()}
 
-@app.post("/api/profile")
-def update_profile(data: UserProfile):
-    storage.update_user_profile(data.profile)
-    return {"status": "updated", "profile": data.profile}
 
 @app.post("/api/negotiate", response_model=Schedule)
 async def negotiate_schedule(request: ChatRequest):
@@ -287,7 +277,6 @@ async def negotiate_schedule(request: ChatRequest):
     try:
         # 2. Fetch all tasks to give AI context
         all_tasks = storage.load_tasks()
-        user_profile = storage.get_user_profile()
         perf_data = storage.get_performance()
         user_settings = storage.get_user_settings()
 
@@ -304,7 +293,6 @@ async def negotiate_schedule(request: ChatRequest):
         # 3. Orchestrate with Feedback
         orchestrated_result = await orchestrate_schedule(
             all_tasks, 
-            user_profile, 
             user_feedback=request.message,
             performance_data=perf_data,
             user_settings=user_settings,

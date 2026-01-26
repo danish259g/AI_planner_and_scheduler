@@ -31,6 +31,7 @@ class WeeklySchedule(BaseModel):
     schedule: List[OrchestratedTask]
     logic_summary: str = Field(description="Explanation of the schedule logic")
     task_profiles: Dict[str, str] = Field(default={}, description="Map of Task ID to Cognitive Type")
+    warnings: List[str] = Field(default=[], description="List of warnings (e.g. dropped tasks)")
 
 class TaskProfile(BaseModel):
     task_id: str
@@ -52,7 +53,6 @@ class WeekStrategy(BaseModel):
 
 async def orchestrate_schedule(
     events: List[Dict[str, Any]], 
-    user_profile: str = "", 
     user_feedback: str = None, 
     performance_data: Dict[str, Any] = None, 
     user_settings: Dict[str, Any] = None,
@@ -122,7 +122,7 @@ async def orchestrate_schedule(
         
         # Step 2: Strategizing Week
         print("Scheduler: Step 2 - Strategizing Week...")
-        strategy = await _generate_week_strategy(client, events, profiles, user_settings, user_profile, user_feedback)
+        strategy = await _generate_week_strategy(client, events, profiles, user_settings, user_feedback)
         
         print(f"DEBUG: Strategist Reason: {strategy.strategy_reasoning}")
         print(f"DEBUG: Strategist assigned {len(strategy.assignments)} tasks.")
@@ -176,6 +176,7 @@ async def orchestrate_schedule(
         
         # 3b. Run Optimizer for each Day
         full_timeline = []
+        all_warnings = []
         
         for day, day_tasks in tasks_by_day.items():
             if not day_tasks: continue
@@ -187,7 +188,13 @@ async def orchestrate_schedule(
             ]
             
             optimizer = DailyBatchOptimizer(day, daily_constraints, user_settings)
-            results = optimizer.solve(day_tasks)
+            
+            # UNPACK TUPLE: (scheduled, dropped)
+            results, dropped = optimizer.solve(day_tasks)
+            
+            # Collect warnings
+            for d in dropped:
+                all_warnings.append(f"Day {day}: {d['reason']}")
             
             for res in results:
                 full_timeline.append(OrchestratedTask(
@@ -211,8 +218,10 @@ async def orchestrate_schedule(
                 f"Tactician Optimized {len(full_timeline)} slots using Cognitive Laws."
             ],
             schedule=full_timeline,
+
             logic_summary=strategy.strategy_reasoning,
-            task_profiles=profile_map
+            task_profiles=profile_map,
+            warnings=all_warnings
         )
         
     except Exception as e:
@@ -250,7 +259,7 @@ async def _get_cognitive_profiles(client, events):
     return response.parsed
 
 
-async def _generate_week_strategy(client, events, profiles, user_settings, user_profile, feedback):
+async def _generate_week_strategy(client, events, profiles, user_settings, feedback):
     # Dynamic Prompt Construction based on Style
     style = user_settings.get('scheduling_style', 'spread')
     
@@ -294,7 +303,6 @@ async def _generate_week_strategy(client, events, profiles, user_settings, user_
     prompt = f"""
     You are the Strategic Planner. Assign each task to a DAY of the week (Sun-Sat).
     
-    [USER PROFILE]: {user_profile}
     [FEEDBACK]: {feedback if feedback else "None"}
     [CONSTRAINTS]: {json.dumps(user_settings.get('constraints', []))}
     [MAX DAILY HOURS]: {user_settings.get('max_daily_hours', 4)}

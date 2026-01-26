@@ -10,7 +10,6 @@ def _ensure_db():
         with open(DB_PATH, 'w') as f:
             json.dump({
                 "tasks": [], 
-                "user_profile": "",
                 "user_settings": {
                     "study_start": 8,
                     "study_end": 22,
@@ -170,23 +169,7 @@ def clear_schedule_data() -> List[Dict[str, Any]]:
     save_tasks(tasks)
     return tasks
 
-def get_user_profile() -> str:
-    _ensure_db()
-    with open(DB_PATH, 'r') as f:
-        data = json.loads(f.read())
-    return data.get("user_profile", "")
 
-def update_user_profile(profile_text: str) -> str:
-    _ensure_db()
-    with open(DB_PATH, 'r') as f:
-        data = json.loads(f.read())
-    
-    data["user_profile"] = profile_text
-    
-    with open(DB_PATH, 'w') as f:
-        json.dump(data, f, indent=2)
-        
-    return profile_text
 
 def get_user_settings() -> Dict[str, Any]:
     _ensure_db()

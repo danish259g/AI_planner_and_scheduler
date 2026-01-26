@@ -5,8 +5,6 @@ const UserProfileModal = ({
     onClose,
     userSettings,
     setUserSettings,
-    userProfile,
-    setUserProfile,
     onSave
 }) => {
     if (!isOpen) return null;
@@ -49,14 +47,7 @@ const UserProfileModal = ({
                             onChange={(e) => setUserSettings({ ...userSettings, username: e.target.value })}
                         />
                     </div>
-                    <div className="form-group">
-                        <label>Target Score</label>
-                        <input
-                            type="number" className="modal-input" placeholder="e.g. 700"
-                            value={userSettings.target_score || ''}
-                            onChange={(e) => setUserSettings({ ...userSettings, target_score: e.target.value })}
-                        />
-                    </div>
+
 
                     <div className="form-group">
                         <label>Peak Energy Time</label>
@@ -99,18 +90,7 @@ const UserProfileModal = ({
                     </div>
                 </div>
 
-                <div className="form-group">
-                    <label>Additional Notes & Preferences</label>
-                    <textarea
-                        value={userProfile}
-                        onChange={(e) => setUserProfile(e.target.value)}
-                        style={{
-                            width: '100%', height: '120px', padding: '15px', borderRadius: '12px',
-                            border: '2px solid #edf2f7', fontSize: '0.95rem', outline: 'none', resize: 'none'
-                        }}
-                        placeholder="Anything else the AI should know?"
-                    />
-                </div>
+
 
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '2.5rem' }}>
                     <button className="btn-secondary" onClick={onClose} style={{ padding: '12px 24px', borderRadius: '12px' }}>Cancel</button>

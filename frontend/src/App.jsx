@@ -14,9 +14,9 @@ import './App.css';
 function App() {
   const [tasks, setTasks] = useState([]);
   const [isVibeOpen, setIsVibeOpen] = useState(false);
-  const [userProfile, setUserProfile] = useState("");
+
   const [messages, setMessages] = useState([
-    { sender: 'ai', message: 'Hi there! I can help you adjust your schedule.' }
+    { sender: 'ai', message: 'System Ready. Logging events...' }
   ]);
   const [performance, setPerformance] = useState({
     Quantitative: { score: 0, self_eval: 5, count: 0 },
@@ -31,7 +31,6 @@ function App() {
     study_end: 22,
     max_daily_hours: 8,
     peak_energy: 'morning', // 'morning', 'afternoon', 'evening'
-    target_score: '',
     scheduling_style: 'spread', // 'spread', 'batch'
     constraints: []
   });
@@ -43,7 +42,7 @@ function App() {
   // Effect to load tasks on mount
   useEffect(() => {
     fetchTasks();
-    fetchProfile();
+
     fetchPerformance();
     fetchSettings();
   }, []);
@@ -60,17 +59,7 @@ function App() {
     }
   };
 
-  const fetchProfile = async () => {
-    try {
-      const res = await fetch('http://127.0.0.1:8000/api/profile');
-      if (res.ok) {
-        const data = await res.json();
-        setUserProfile(data.profile);
-      }
-    } catch (err) {
-      console.error("Failed to fetch profile", err);
-    }
-  };
+
 
   const fetchSettings = async () => {
     try {
@@ -86,13 +75,6 @@ function App() {
 
   const handleSaveProfile = async () => {
     try {
-      // Save Profile
-      await fetch('http://127.0.0.1:8000/api/profile', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ profile: userProfile })
-      });
-
       // Save Settings
       await fetch('http://127.0.0.1:8000/api/settings', {
         method: 'POST',
@@ -107,36 +89,7 @@ function App() {
     }
   };
 
-  const handleSendMessage = async (text) => {
-    setMessages(prev => [...prev, { sender: 'user', message: text }]);
 
-    try {
-      const response = await fetch('http://127.0.0.1:8000/api/negotiate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: text })
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setTasks(data.tasks); // Update calendar
-
-        // Add AI response
-        const reply = data.logic_summary || "Schedule updated.";
-        setMessages(prev => [...prev, { sender: 'ai', message: reply }]);
-      } else {
-        console.error("Negotiation failed");
-        if (response.status === 503) {
-          setMessages(prev => [...prev, { sender: 'ai', message: "⚠️ The AI service is currently overloaded (503). Please wait 30 seconds and try again." }]);
-        } else {
-          setMessages(prev => [...prev, { sender: 'ai', message: "Sorry, I couldn't update the schedule right now." }]);
-        }
-      }
-    } catch (err) {
-      console.error("Error negotiating", err);
-      setMessages(prev => [...prev, { sender: 'ai', message: "Error communicating with server." }]);
-    }
-  };
 
   const fetchTasks = async () => {
     try {
@@ -427,7 +380,7 @@ function App() {
             <h3>
               <span>🤖</span> Assistant
             </h3>
-            <NegotiationChat messages={messages} onSendMessage={handleSendMessage} />
+            <NegotiationChat messages={messages} />
           </div>
         ) : (
           <PerformanceDashboard
@@ -544,8 +497,6 @@ function App() {
         onClose={() => setIsVibeOpen(false)}
         userSettings={userSettings}
         setUserSettings={setUserSettings}
-        userProfile={userProfile}
-        setUserProfile={setUserProfile}
         onSave={handleSaveProfile}
       />
 

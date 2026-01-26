@@ -15,7 +15,7 @@
       "comments": "",
       "rationale": "Optimized for Analytical performance",
       "cognitive_type": "Analytical",
-      "scheduled_day": "Tue",
+      "scheduled_day": "Mon",
       "scheduled_start": 12.75,
       "scheduled_end": 13.5
     },
@@ -34,9 +34,9 @@
       "comments": "",
       "cognitive_type": "General",
       "rationale": "Optimized for General performance",
-      "scheduled_day": "Wed",
-      "scheduled_start": 16.75,
-      "scheduled_end": 17.416666666666668
+      "scheduled_day": "Mon",
+      "scheduled_start": 12.0,
+      "scheduled_end": 12.666666666666666
     },
     {
       "id": "3",
@@ -53,9 +53,9 @@
       "comments": "",
       "cognitive_type": "Creative",
       "rationale": "Optimized for Creative performance",
-      "scheduled_day": "Sun",
-      "scheduled_start": 13.25,
-      "scheduled_end": 13.583333333333334
+      "scheduled_day": "Mon",
+      "scheduled_start": 10.5,
+      "scheduled_end": 10.833333333333334
     },
     {
       "id": "4",
@@ -72,9 +72,9 @@
       "comments": "",
       "cognitive_type": "General",
       "rationale": "Optimized for General performance",
-      "scheduled_day": "Mon",
-      "scheduled_start": 13.25,
-      "scheduled_end": 13.583333333333334
+      "scheduled_day": "Wed",
+      "scheduled_start": 13.75,
+      "scheduled_end": 14.083333333333334
     },
     {
       "id": "5",
@@ -92,8 +92,8 @@
       "cognitive_type": "General",
       "rationale": "Optimized for General performance",
       "scheduled_day": "Thu",
-      "scheduled_start": 14.25,
-      "scheduled_end": 14.583333333333334
+      "scheduled_start": 13.5,
+      "scheduled_end": 13.833333333333334
     },
     {
       "id": "6",
@@ -111,8 +111,8 @@
       "cognitive_type": "Analytical",
       "rationale": "Optimized for Analytical performance",
       "scheduled_day": "Tue",
-      "scheduled_start": 13.75,
-      "scheduled_end": 14.5
+      "scheduled_start": 12.75,
+      "scheduled_end": 13.5
     },
     {
       "id": "7",
@@ -130,8 +130,8 @@
       "cognitive_type": "Analytical",
       "rationale": "Optimized for Analytical performance",
       "scheduled_day": "Wed",
-      "scheduled_start": 12.75,
-      "scheduled_end": 13.5
+      "scheduled_start": 13.0,
+      "scheduled_end": 13.75
     },
     {
       "id": "8",
@@ -167,9 +167,9 @@
       "comments": "",
       "cognitive_type": "General",
       "rationale": "Optimized for General performance",
-      "scheduled_day": "Fri",
-      "scheduled_start": 13.0,
-      "scheduled_end": 13.666666666666666
+      "scheduled_day": "Tue",
+      "scheduled_start": 12.0,
+      "scheduled_end": 12.666666666666666
     },
     {
       "id": "10",
@@ -186,9 +186,9 @@
       "comments": "",
       "cognitive_type": "Memory",
       "rationale": "Optimized for Memory performance",
-      "scheduled_day": "Sat",
-      "scheduled_start": 13.25,
-      "scheduled_end": 13.666666666666666
+      "scheduled_day": "Tue",
+      "scheduled_start": 13.5,
+      "scheduled_end": 13.916666666666666
     },
     {
       "id": "11",
@@ -205,7 +205,7 @@
       "comments": "",
       "cognitive_type": "General",
       "rationale": "Optimized for General performance",
-      "scheduled_day": "Sun",
+      "scheduled_day": "Fri",
       "scheduled_start": 12.0,
       "scheduled_end": 12.5
     },
@@ -216,7 +216,7 @@
       "status": "scheduled",
       "tag": "Essay",
       "location": "Home",
-      "priority": "Medium",
+      "priority": "High",
       "is_locked": false,
       "day": null,
       "start_time": null,
@@ -225,8 +225,8 @@
       "rationale": "Optimized for Creative performance",
       "cognitive_type": "Creative",
       "scheduled_day": "Mon",
-      "scheduled_start": 12.0,
-      "scheduled_end": 12.5
+      "scheduled_start": 10.0,
+      "scheduled_end": 10.5
     },
     {
       "id": "13",
@@ -235,7 +235,7 @@
       "status": "scheduled",
       "tag": "Essay",
       "location": "Home",
-      "priority": "Medium",
+      "priority": "High",
       "is_locked": false,
       "day": null,
       "start_time": null,
@@ -244,8 +244,8 @@
       "cognitive_type": "Creative",
       "rationale": "Optimized for Creative performance",
       "scheduled_day": "Tue",
-      "scheduled_start": 14.5,
-      "scheduled_end": 15.0
+      "scheduled_start": 10.0,
+      "scheduled_end": 10.5
     },
     {
       "id": "14",
@@ -254,7 +254,7 @@
       "status": "scheduled",
       "tag": "Essay",
       "location": "Home",
-      "priority": "Medium",
+      "priority": "High",
       "is_locked": false,
       "day": null,
       "start_time": null,
@@ -263,8 +263,8 @@
       "cognitive_type": "Creative",
       "rationale": "Optimized for Creative performance",
       "scheduled_day": "Wed",
-      "scheduled_start": 13.5,
-      "scheduled_end": 14.0
+      "scheduled_start": 10.0,
+      "scheduled_end": 10.5
     },
     {
       "id": "15",
@@ -281,7 +281,7 @@
       "comments": "",
       "cognitive_type": "Analytical",
       "rationale": "Optimized for Analytical performance",
-      "scheduled_day": "Thu",
+      "scheduled_day": "Fri",
       "scheduled_start": 13.5,
       "scheduled_end": 14.25
     },
@@ -300,7 +300,7 @@
       "comments": "",
       "rationale": "Optimized for General performance",
       "cognitive_type": "General",
-      "scheduled_day": "Fri",
+      "scheduled_day": "Wed",
       "scheduled_start": 12.0,
       "scheduled_end": 12.833333333333334
     },
@@ -319,7 +319,7 @@
       "comments": "",
       "cognitive_type": "General",
       "rationale": "Optimized for General performance",
-      "scheduled_day": "Sat",
+      "scheduled_day": "Thu",
       "scheduled_start": 12.0,
       "scheduled_end": 12.5
     },
@@ -338,9 +338,9 @@
       "comments": "",
       "rationale": "Optimized for Analytical performance",
       "cognitive_type": "Analytical",
-      "scheduled_day": "Sun",
-      "scheduled_start": 12.75,
-      "scheduled_end": 13.233333333333333
+      "scheduled_day": "Sat",
+      "scheduled_start": 13.5,
+      "scheduled_end": 13.983333333333333
     },
     {
       "id": "19",
@@ -349,7 +349,7 @@
       "status": "scheduled",
       "tag": "Essay",
       "location": "Home",
-      "priority": "Medium",
+      "priority": "High",
       "is_locked": false,
       "day": null,
       "start_time": null,
@@ -357,9 +357,9 @@
       "comments": "",
       "cognitive_type": "Creative",
       "rationale": "Optimized for Creative performance",
-      "scheduled_day": "Mon",
-      "scheduled_start": 12.75,
-      "scheduled_end": 13.25
+      "scheduled_day": "Fri",
+      "scheduled_start": 10.0,
+      "scheduled_end": 10.5
     },
     {
       "id": "20",
@@ -368,17 +368,17 @@
       "status": "scheduled",
       "tag": "Essay",
       "location": "Home",
-      "priority": "Medium",
+      "priority": "High",
       "is_locked": false,
       "day": null,
       "start_time": null,
       "end_time": null,
       "comments": "",
-      "cognitive_type": "Creative",
       "rationale": "Optimized for Creative performance",
-      "scheduled_day": "Tue",
-      "scheduled_start": 12.0,
-      "scheduled_end": 12.5
+      "cognitive_type": "Creative",
+      "scheduled_day": "Thu",
+      "scheduled_start": 10.0,
+      "scheduled_end": 10.5
     },
     {
       "id": "21",
@@ -395,9 +395,9 @@
       "comments": "",
       "cognitive_type": "Analytical",
       "rationale": "Optimized for Analytical performance",
-      "scheduled_day": "Wed",
-      "scheduled_start": 12.0,
-      "scheduled_end": 12.75
+      "scheduled_day": "Fri",
+      "scheduled_start": 12.75,
+      "scheduled_end": 13.5
     },
     {
       "id": "22",
@@ -414,41 +414,46 @@
       "comments": "",
       "cognitive_type": "Analytical",
       "rationale": "Optimized for Analytical performance",
-      "scheduled_day": "Thu",
-      "scheduled_start": 12.0,
-      "scheduled_end": 12.75
+      "scheduled_day": "Sat",
+      "scheduled_start": 12.75,
+      "scheduled_end": 13.5
     }
   ],
-  "user_profile": "",
   "performance_data": {
     "Quantitative": {
-      "score": 0,
-      "self_eval": 5,
-      "count": 0
+      "score": 95.0,
+      "self_eval": 10,
+      "count": 1
     },
     "Verbal": {
-      "score": 0,
-      "self_eval": 5,
-      "count": 0
+      "score": 95.65217391304348,
+      "self_eval": 10,
+      "count": 1
     },
     "English": {
-      "score": 0,
-      "self_eval": 5,
-      "count": 0
+      "score": 100.0,
+      "self_eval": 10,
+      "count": 1
     },
     "Essay": {
-      "score": 0,
+      "score": 50.0,
       "self_eval": 5,
-      "count": 0
+      "count": 1
     }
   },
   "user_settings": {
     "study_start": 9,
     "study_end": 18,
-    "constraints": [],
+    "constraints": [
+      {
+        "name": "class",
+        "day": "Sun",
+        "start": 8,
+        "end": 15
+      }
+    ],
     "max_daily_hours": 5,
     "username": "Guy",
-    "target_score": "",
     "peak_energy": "afternoon",
     "scheduling_style": "spread"
   },
