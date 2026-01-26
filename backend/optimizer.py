@@ -105,10 +105,16 @@ class DailyBatchOptimizer:
                 end_time = current_time + (t.duration_mins/60.0)
                 
                 if self._is_slot_free(current_time, end_time):
-                    score = self._score_slot(t, current_time)
-                    if score > best_score:
-                        best_score = score
-                        best_start = current_time
+                    consecutive = self._calc_consecutive_minutes_for_candidate(current_time, t.duration_mins)
+                    
+                    if consecutive > MAX_CONSECUTIVE_MINUTES:
+                        # Cannot place here, forces a break
+                        pass # Score remains -inf, loop continues
+                    else:
+                        score = self._score_slot(t, current_time)
+                        if score > best_score:
+                            best_score = score
+                            best_start = current_time
                 
                 current_time += 0.25 # 15 min step
 
@@ -116,10 +122,6 @@ class DailyBatchOptimizer:
             if best_start != -1.0:
                 # [STRICT LIMIT CHECK]
                 # Check if adding this task exceeds the daily limit
-                # We do this check greedy-style: if it fits the schedule but breaks the limit, we skip it.
-                # Ideally, we should have filtered before, but duration-based filtering is trickier with gaps.
-                
-                # Calculate total minutes scheduled so far
                 total_mins = sum(s.task.duration_mins for s in self.scheduled_tasks)
                 daily_limit_mins = self.settings.get('max_daily_hours', 4) * 60
                 
@@ -180,9 +182,17 @@ class DailyBatchOptimizer:
         # Creative/Focus tasks prefer 08:00 - 11:00
         if task.cognitive_type == CognitiveType.CREATIVE:
             if MORNING_VERBAL_START <= start_time <= MORNING_VERBAL_END:
-                score += 40 # Boosted from 30 to compete with User Preference
-            elif start_time > 18.0: # Too late for heavy reading
-                score -= 20
+                # If user is evening person, reduce this morning bonus significantly
+                bonus = 40
+                if self.peak_energy == 'evening':
+                    bonus = 0 # No morning bonus for evening people for creative work
+                    
+                score += bonus 
+            elif start_time > 18.0: # Too late for heavy reading? Not if evening person.
+                penalty = 20
+                if self.peak_energy == 'evening':
+                    penalty = 0 # No penalty for late work if evening person
+                score -= penalty
 
         # ... (skipping unchanged sections) ...
 
@@ -243,34 +253,66 @@ class DailyBatchOptimizer:
                 return None
         return None
 
-    def _calc_consecutive_minutes(self, last_slot: TimeSlot) -> int:
-        """Backtrack to see how long we've been working continuously (Global)"""
-        total_mins = last_slot.task.duration_mins
+    def _calc_consecutive_minutes_for_candidate(self, candidate_start: float, candidate_duration: int) -> int:
+        """
+        Check total consecutive minutes if we place a task at candidate_start, 
+        looking both BACKWARDS and FORWARDS.
+        """
+        candidate_end = candidate_start + (candidate_duration / 60.0)
         
-        idx = -1
-        try:
-           idx = self.scheduled_tasks.index(last_slot)
-        except ValueError:
-            return 0
-            
-        current_idx = idx
-        while current_idx >= 0:
-             curr = self.scheduled_tasks[current_idx]
-             
-             # Check continuity
-             if current_idx > 0:
-                 prev = self.scheduled_tasks[current_idx-1]
-                 # STRICTER GAP: If gap >= 15 mins (0.25), we consider it a break.
-                 # using epsilon for float safety
-                 if (curr.start_hour - prev.end_hour) > (0.25 - 1e-5):
-                     break
-                 
-                 total_mins += prev.task.duration_mins
-                 current_idx -= 1
-             else:
+        # 1. Backward Scan (Preceding Block)
+        prev_mins = 0
+        idx_prev = -1
+        
+        # Find task ending at candidate_start
+        for i in range(len(self.scheduled_tasks)-1, -1, -1):
+             s = self.scheduled_tasks[i]
+             if abs(s.end_hour - candidate_start) < (0.25 - 1e-5):
+                 idx_prev = i
+                 break
+             if s.end_hour < candidate_start:
                  break
                  
-        return total_mins
+        if idx_prev != -1:
+             curr_idx = idx_prev
+             while curr_idx >= 0:
+                 curr = self.scheduled_tasks[curr_idx]
+                 prev_mins += curr.task.duration_mins
+                 if curr_idx > 0:
+                     prev = self.scheduled_tasks[curr_idx-1]
+                     if (curr.start_hour - prev.end_hour) > (0.25 - 1e-5):
+                         break
+                     curr_idx -= 1
+                 else:
+                     break
+                     
+        # 2. Forward Scan (Succeeding Block)
+        next_mins = 0
+        idx_next = -1
+        
+        # Find task starting at candidate_end
+        for i in range(len(self.scheduled_tasks)):
+            s = self.scheduled_tasks[i]
+            if abs(s.start_hour - candidate_end) < (0.25 - 1e-5):
+                idx_next = i
+                break
+            if s.start_hour > candidate_end:
+                break
+                
+        if idx_next != -1:
+            curr_idx = idx_next
+            while curr_idx < len(self.scheduled_tasks):
+                curr = self.scheduled_tasks[curr_idx]
+                next_mins += curr.task.duration_mins
+                if curr_idx < len(self.scheduled_tasks) - 1:
+                    next_task = self.scheduled_tasks[curr_idx+1]
+                    if (next_task.start_hour - curr.end_hour) > (0.25 - 1e-5):
+                        break
+                    curr_idx += 1
+                else:
+                    break
+        
+        return prev_mins + candidate_duration + next_mins
 
     def _calc_consecutive_subject_minutes(self, last_slot: TimeSlot, subject: str) -> int:
         """Backtrack to see how long we've been doing this subject"""

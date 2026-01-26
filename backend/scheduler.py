@@ -67,10 +67,20 @@ async def orchestrate_schedule(
                 # task["original_priority"] = task.get("priority")
                 
                 perf = performance_data[tag]
-                # If score is known (count > 0) and low (< 70)
-                if perf.get("count", 0) > 0 and perf.get("score", 0) < 70:
-                    print(f"Scheduler: Priority Boost for {task.get('name')} (Score: {perf.get('score')})")
-                    task["priority"] = "High"
+                
+                # Composite Score Calculation
+                obj_score = perf.get("score", 0)
+                self_eval = perf.get("self_eval", 5) # Default to 5 (neutral)
+                subj_score = self_eval * 10 # Convert 1-10 to 0-100
+                
+                # Weighted Average: 70% Objective, 30% Subjective
+                composite_score = (obj_score * 0.7) + (subj_score * 0.3)
+                
+                # Rule: Boost if Composite is low OR if User feels very unconfident (<= 4)
+                if perf.get("count", 0) > 0:
+                    if composite_score < 70 or self_eval <= 4:
+                        print(f"Scheduler: Priority Boost for {task.get('name')} (Composite: {composite_score:.1f}, Eval: {self_eval})")
+                        task["priority"] = "High"
 
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
