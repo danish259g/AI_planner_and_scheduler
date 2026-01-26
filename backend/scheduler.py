@@ -216,19 +216,41 @@ async def orchestrate_schedule(
                 ))
 
             # --- INJECT DAILY REVIEW ---
+            # --- INJECT DAILY REVIEW ---
             if results:
                 # Find end of last task
                 last_end = max([r["end_time"] for r in results])
                 
                 # Rule: After dinner (e.g., > 20:30) OR immediately after last task if it ends very late
-                review_start = max(last_end + 0.25, 20.5) 
+                default_review_start = 20.5 # 20:30
+                
+                # Logic: Check if default time is blocked by ANY constraint
+                is_evening_blocked = False
+                review_duration_hours = 20.0 / 60.0 # 0.33 hours
+                
+                for c in daily_constraints:
+                    c_start = float(c.get('start', 0))
+                    c_end = float(c.get('end', 24))
+                    # Check overlap with [20.5, 20.83]
+                    if max(default_review_start, c_start) < min(default_review_start + review_duration_hours, c_end):
+                        is_evening_blocked = True
+                        print(f"Daily Review: Evening slot blocked by constraint {c.get('name')}. Scheduling earlier.")
+                        break
+                
+                if is_evening_blocked:
+                     # If evening blocked (e.g. by Rest), schedule immediately after last task
+                     # But ensure we don't overlap with the constraint that blocked us (if it starts earlier)
+                     review_start = last_end + 0.25 # 15 min buffer
+                else:
+                     # Standard behavior: Late in day
+                     review_start = max(last_end + 0.25, default_review_start)
                 
                 full_timeline.append(OrchestratedTask(
                     task_id=f"daily_review_{day}",
                     day=day,
                     start_time=review_start,
                     duration_mins=20, # Default 20 mins
-                    rationale="Automatic Daily Review after dinner"
+                    rationale="Automatic Daily Review (adjusted for constraints)"
                 ))
 
         # Step 4: Explanation (The Narrator)
