@@ -10,7 +10,6 @@ def _ensure_db():
         with open(DB_PATH, 'w') as f:
             json.dump({
                 "tasks": [], 
-                "user_profile": "",
                 "user_settings": {
                     "study_start": 8,
                     "study_end": 22,
@@ -159,7 +158,12 @@ def delete_task(task_id: str) -> List[Dict[str, Any]]:
 
 def clear_schedule_data() -> List[Dict[str, Any]]:
     tasks = load_tasks()
+    tasks_to_keep = []
     for t in tasks:
+        # If it's an auto-generated Review task, DELETE it on clear
+        if str(t.get("id")).startswith("daily_review_"):
+            continue
+            
         if "scheduled_day" in t:
             del t["scheduled_day"]
         if "scheduled_start" in t:
@@ -167,26 +171,12 @@ def clear_schedule_data() -> List[Dict[str, Any]]:
         if "scheduled_end" in t:
             del t["scheduled_end"]
         t["status"] = "pending"
-    save_tasks(tasks)
-    return tasks
-
-def get_user_profile() -> str:
-    _ensure_db()
-    with open(DB_PATH, 'r') as f:
-        data = json.loads(f.read())
-    return data.get("user_profile", "")
-
-def update_user_profile(profile_text: str) -> str:
-    _ensure_db()
-    with open(DB_PATH, 'r') as f:
-        data = json.loads(f.read())
-    
-    data["user_profile"] = profile_text
-    
-    with open(DB_PATH, 'w') as f:
-        json.dump(data, f, indent=2)
+        tasks_to_keep.append(t)
         
-    return profile_text
+    save_tasks(tasks_to_keep)
+    return tasks_to_keep
+
+
 
 def get_user_settings() -> Dict[str, Any]:
     _ensure_db()

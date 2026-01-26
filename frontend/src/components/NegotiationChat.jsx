@@ -1,7 +1,6 @@
-import React, { useState } from 'react';
+import React from 'react';
 
-export default function NegotiationChat({ messages, onSendMessage }) {
-    const [input, setInput] = useState('');
+export default function NegotiationChat({ messages }) {
     const chatEndRef = React.useRef(null);
 
     const scrollToBottom = () => {
@@ -11,12 +10,6 @@ export default function NegotiationChat({ messages, onSendMessage }) {
     React.useEffect(() => {
         scrollToBottom();
     }, [messages]);
-
-    const handleSend = () => {
-        if (!input.trim()) return;
-        onSendMessage(input);
-        setInput('');
-    };
 
     return (
         <div className="chat-interface">
@@ -29,15 +22,6 @@ export default function NegotiationChat({ messages, onSendMessage }) {
                     </div>
                 ))}
                 <div ref={chatEndRef} />
-            </div>
-            <div className="chat-input-area">
-                <input
-                    type="text"
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                    placeholder="Ask assistant..."
-                />
             </div>
         </div>
     );

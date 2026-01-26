@@ -81,6 +81,11 @@ TASK_CATALOG = {
         "default_duration": 60,
         "description": "Reviewing mistakes or general study"
     },
+    "Daily Review": {
+        "tag": "Review",
+        "default_duration": 20, 
+        "description": "Quick review of the day's study topics"
+    },
     
     # --- Classes (Navy) ---
     "Course Lesson": {
