@@ -22,7 +22,7 @@ export default function TaskBank({ tasks, onDeleteTask, onOrchestrate, onTaskUpd
             style.borderColor = 'var(--tag-border-verbal)'; style.background = 'var(--tag-bg-verbal)';
         } else if (t.includes('english') || t.includes('vocab')) {
             style.borderColor = 'var(--tag-border-english)'; style.background = 'var(--tag-bg-english)';
-        } else if (t.includes('sim')) {
+        } else if (t.includes('sim') || t.includes('review') || t.includes('practice')) {
             style.borderColor = 'var(--tag-border-simulation)'; style.background = 'var(--tag-bg-simulation)';
         } else if (t.includes('essay')) {
             style.borderColor = 'var(--tag-border-essay)'; style.background = 'var(--tag-bg-essay)';

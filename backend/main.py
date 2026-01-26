@@ -251,6 +251,31 @@ async def generate_schedule(): # No payload needed, reads from DB
                     t["cognitive_type"] = orchestrated_result.task_profiles[t_id]
             
             updated_tasks.append(t)
+
+        # 4b. Handle Injected Tasks (e.g. Daily Review) that are in Schedule but not in DB
+        # Iterate through scheduled items to find any IDs we missed
+        existing_ids = set([str(t.get("id")) for t in updated_tasks])
+        
+        for item in orchestrated_result.schedule:
+            if str(item.task_id) not in existing_ids:
+                # This is a new injected task!
+                print(f"DEBUG: Found injected task {item.task_id}")
+                new_task = {
+                    "id": str(item.task_id),
+                    "name": "Daily Review", # Default name, can be refined
+                    "duration": item.duration_mins,
+                    "tag": "Review",
+                    "status": "scheduled",
+                    "scheduled_day": item.day,
+                    "scheduled_start": item.start_time,
+                    "scheduled_end": item.start_time + (item.duration_mins / 60),
+                    "rationale": item.rationale,
+                    "cognitive_type": "Review",
+                    "priority": "Medium",
+                    "location": "Home",
+                    "is_locked": True # Locked because it's effectively fixed by the scheduler
+                }
+                updated_tasks.append(new_task)
             
         print(f"DEBUG: Scheduled {len([t for t in updated_tasks if t.get('status') == 'scheduled'])} tasks out of {len(updated_tasks)}")
         

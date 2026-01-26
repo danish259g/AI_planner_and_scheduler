@@ -215,6 +215,22 @@ async def orchestrate_schedule(
                     rationale=f"Optimized for {profile_map.get(str(res['id']), 'General')} performance"
                 ))
 
+            # --- INJECT DAILY REVIEW ---
+            if results:
+                # Find end of last task
+                last_end = max([r["end_time"] for r in results])
+                
+                # Rule: After dinner (e.g., > 20:30) OR immediately after last task if it ends very late
+                review_start = max(last_end + 0.25, 20.5) 
+                
+                full_timeline.append(OrchestratedTask(
+                    task_id=f"daily_review_{day}",
+                    day=day,
+                    start_time=review_start,
+                    duration_mins=20, # Default 20 mins
+                    rationale="Automatic Daily Review after dinner"
+                ))
+
         # Step 4: Explanation (The Narrator)
         # Explains the final Result
         print("Scheduler: Step 4 - Examining Result...")

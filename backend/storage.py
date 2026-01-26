@@ -158,7 +158,12 @@ def delete_task(task_id: str) -> List[Dict[str, Any]]:
 
 def clear_schedule_data() -> List[Dict[str, Any]]:
     tasks = load_tasks()
+    tasks_to_keep = []
     for t in tasks:
+        # If it's an auto-generated Review task, DELETE it on clear
+        if str(t.get("id")).startswith("daily_review_"):
+            continue
+            
         if "scheduled_day" in t:
             del t["scheduled_day"]
         if "scheduled_start" in t:
@@ -166,8 +171,10 @@ def clear_schedule_data() -> List[Dict[str, Any]]:
         if "scheduled_end" in t:
             del t["scheduled_end"]
         t["status"] = "pending"
-    save_tasks(tasks)
-    return tasks
+        tasks_to_keep.append(t)
+        
+    save_tasks(tasks_to_keep)
+    return tasks_to_keep
 
 
 

@@ -35,8 +35,8 @@
       "cognitive_type": "General",
       "rationale": "Optimized for General performance",
       "scheduled_day": "Mon",
-      "scheduled_start": 16.75,
-      "scheduled_end": 17.416666666666668
+      "scheduled_start": 16.25,
+      "scheduled_end": 16.916666666666668
     },
     {
       "id": "3",
@@ -53,9 +53,9 @@
       "comments": "",
       "cognitive_type": "Creative",
       "rationale": "Optimized for Creative performance",
-      "scheduled_day": "Tue",
-      "scheduled_start": 18.0,
-      "scheduled_end": 18.333333333333332
+      "scheduled_day": "Mon",
+      "scheduled_start": 17.0,
+      "scheduled_end": 17.333333333333332
     },
     {
       "id": "4",
@@ -72,15 +72,15 @@
       "comments": "",
       "cognitive_type": "General",
       "rationale": "Optimized for General performance",
-      "scheduled_day": "Tue",
-      "scheduled_start": 18.5,
-      "scheduled_end": 18.833333333333332
+      "scheduled_day": "Mon",
+      "scheduled_start": 17.5,
+      "scheduled_end": 17.833333333333332
     },
     {
       "id": "5",
       "name": "Timed Section (Verbal)",
       "duration": 20,
-      "status": "pending",
+      "status": "scheduled",
       "tag": "Simulation",
       "location": "Home",
       "priority": "Medium",
@@ -90,10 +90,10 @@
       "end_time": null,
       "comments": "",
       "cognitive_type": "General",
-      "rationale": null,
-      "scheduled_day": null,
-      "scheduled_start": null,
-      "scheduled_end": null
+      "rationale": "Optimized for General performance",
+      "scheduled_day": "Mon",
+      "scheduled_start": 18.25,
+      "scheduled_end": 18.583333333333332
     },
     {
       "id": "6",
@@ -129,9 +129,9 @@
       "comments": "",
       "cognitive_type": "Analytical",
       "rationale": "Optimized for Analytical performance",
-      "scheduled_day": "Tue",
-      "scheduled_start": 12.75,
-      "scheduled_end": 13.5
+      "scheduled_day": "Mon",
+      "scheduled_start": 14.5,
+      "scheduled_end": 15.25
     },
     {
       "id": "8",
@@ -148,9 +148,9 @@
       "comments": "",
       "cognitive_type": "Analytical",
       "rationale": "Optimized for Analytical performance",
-      "scheduled_day": "Wed",
-      "scheduled_start": 12.75,
-      "scheduled_end": 13.5
+      "scheduled_day": "Mon",
+      "scheduled_start": 15.25,
+      "scheduled_end": 16.0
     },
     {
       "id": "9",
@@ -167,7 +167,7 @@
       "comments": "",
       "cognitive_type": "General",
       "rationale": "Optimized for General performance",
-      "scheduled_day": "Wed",
+      "scheduled_day": "Tue",
       "scheduled_start": 18.0,
       "scheduled_end": 18.666666666666668
     },
@@ -186,9 +186,9 @@
       "comments": "",
       "cognitive_type": "Memory",
       "rationale": "Optimized for Memory performance",
-      "scheduled_day": "Wed",
-      "scheduled_start": 20.0,
-      "scheduled_end": 20.416666666666668
+      "scheduled_day": "Tue",
+      "scheduled_start": 19.5,
+      "scheduled_end": 19.916666666666668
     },
     {
       "id": "11",
@@ -205,7 +205,7 @@
       "comments": "",
       "cognitive_type": "General",
       "rationale": "Optimized for General performance",
-      "scheduled_day": "Wed",
+      "scheduled_day": "Tue",
       "scheduled_start": 18.75,
       "scheduled_end": 19.25
     },
@@ -224,7 +224,7 @@
       "comments": "",
       "rationale": "Optimized for Creative performance",
       "cognitive_type": "Creative",
-      "scheduled_day": "Mon",
+      "scheduled_day": "Tue",
       "scheduled_start": 16.25,
       "scheduled_end": 16.75
     },
@@ -244,8 +244,8 @@
       "cognitive_type": "Creative",
       "rationale": "Optimized for Creative performance",
       "scheduled_day": "Tue",
-      "scheduled_start": 16.25,
-      "scheduled_end": 16.75
+      "scheduled_start": 16.75,
+      "scheduled_end": 17.25
     },
     {
       "id": "14",
@@ -262,9 +262,9 @@
       "comments": "",
       "cognitive_type": "Creative",
       "rationale": "Optimized for Creative performance",
-      "scheduled_day": "Wed",
-      "scheduled_start": 16.25,
-      "scheduled_end": 16.75
+      "scheduled_day": "Tue",
+      "scheduled_start": 17.25,
+      "scheduled_end": 17.75
     },
     {
       "id": "15",
@@ -281,9 +281,9 @@
       "comments": "",
       "cognitive_type": "Analytical",
       "rationale": "Optimized for Analytical performance",
-      "scheduled_day": "Mon",
-      "scheduled_start": 14.5,
-      "scheduled_end": 15.25
+      "scheduled_day": "Wed",
+      "scheduled_start": 12.75,
+      "scheduled_end": 13.5
     },
     {
       "id": "16",
@@ -300,9 +300,9 @@
       "comments": "",
       "rationale": "Optimized for General performance",
       "cognitive_type": "General",
-      "scheduled_day": "Tue",
-      "scheduled_start": 16.75,
-      "scheduled_end": 17.583333333333332
+      "scheduled_day": "Wed",
+      "scheduled_start": 17.5,
+      "scheduled_end": 18.333333333333332
     },
     {
       "id": "17",
@@ -320,14 +320,14 @@
       "cognitive_type": "General",
       "rationale": "Optimized for General performance",
       "scheduled_day": "Wed",
-      "scheduled_start": 19.5,
-      "scheduled_end": 20.0
+      "scheduled_start": 18.5,
+      "scheduled_end": 19.0
     },
     {
       "id": "18",
       "name": "Analogies",
       "duration": 29,
-      "status": "scheduled",
+      "status": "pending",
       "tag": "Verbal",
       "location": "Home",
       "priority": "Medium",
@@ -336,11 +336,11 @@
       "start_time": null,
       "end_time": null,
       "comments": "",
-      "rationale": "Optimized for Analytical performance",
+      "rationale": null,
       "cognitive_type": "Analytical",
-      "scheduled_day": "Wed",
-      "scheduled_start": 13.5,
-      "scheduled_end": 13.983333333333333
+      "scheduled_day": null,
+      "scheduled_start": null,
+      "scheduled_end": null
     },
     {
       "id": "19",
@@ -358,8 +358,8 @@
       "cognitive_type": "Creative",
       "rationale": "Optimized for Creative performance",
       "scheduled_day": "Wed",
-      "scheduled_start": 16.75,
-      "scheduled_end": 17.25
+      "scheduled_start": 16.25,
+      "scheduled_end": 16.75
     },
     {
       "id": "20",
@@ -377,8 +377,8 @@
       "rationale": "Optimized for Creative performance",
       "cognitive_type": "Creative",
       "scheduled_day": "Wed",
-      "scheduled_start": 17.25,
-      "scheduled_end": 17.75
+      "scheduled_start": 16.75,
+      "scheduled_end": 17.25
     },
     {
       "id": "21",
@@ -395,9 +395,9 @@
       "comments": "",
       "cognitive_type": "Analytical",
       "rationale": "Optimized for Analytical performance",
-      "scheduled_day": "Mon",
-      "scheduled_start": 15.25,
-      "scheduled_end": 16.0
+      "scheduled_day": "Wed",
+      "scheduled_start": 13.5,
+      "scheduled_end": 14.25
     },
     {
       "id": "22",
@@ -414,9 +414,54 @@
       "comments": "",
       "cognitive_type": "Analytical",
       "rationale": "Optimized for Analytical performance",
+      "scheduled_day": "Wed",
+      "scheduled_start": 14.5,
+      "scheduled_end": 15.25
+    },
+    {
+      "id": "daily_review_Mon",
+      "name": "Daily Review",
+      "duration": 20,
+      "tag": "Review",
+      "status": "scheduled",
+      "scheduled_day": "Mon",
+      "scheduled_start": 20.5,
+      "scheduled_end": 20.833333333333332,
+      "rationale": "Automatic Daily Review after dinner",
+      "cognitive_type": "Review",
+      "priority": "Medium",
+      "location": "Home",
+      "is_locked": true
+    },
+    {
+      "id": "daily_review_Tue",
+      "name": "Daily Review",
+      "duration": 20,
+      "tag": "Review",
+      "status": "scheduled",
       "scheduled_day": "Tue",
-      "scheduled_start": 13.5,
-      "scheduled_end": 14.25
+      "scheduled_start": 20.5,
+      "scheduled_end": 20.833333333333332,
+      "rationale": "Automatic Daily Review after dinner",
+      "cognitive_type": "Review",
+      "priority": "Medium",
+      "location": "Home",
+      "is_locked": true
+    },
+    {
+      "id": "daily_review_Wed",
+      "name": "Daily Review",
+      "duration": 20,
+      "tag": "Review",
+      "status": "scheduled",
+      "scheduled_day": "Wed",
+      "scheduled_start": 20.5,
+      "scheduled_end": 20.833333333333332,
+      "rationale": "Automatic Daily Review after dinner",
+      "cognitive_type": "Review",
+      "priority": "Medium",
+      "location": "Home",
+      "is_locked": true
     }
   ],
   "performance_data": {
