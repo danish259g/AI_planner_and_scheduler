@@ -6,11 +6,10 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 
-# Load env variables from backend/.env if it exists, for local dev
+# Load env variables from backend/.env if it exists
 load_dotenv(Path(__file__).parent / "backend" / ".env")
 
-# Add the project root to sys.path so we can import backend modules
-# Assuming this file is in the root of the project
+# Add the project root to sys.path
 current_file = Path(__file__).resolve()
 project_root = current_file.parent
 if str(project_root) not in sys.path:
@@ -19,17 +18,76 @@ if str(project_root) not in sys.path:
 from backend import storage, scheduler, interpreter
 
 # --- Setup & Styling ---
-st.set_page_config(page_title="AI Weekly Planner", page_icon="📅", layout="wide")
+st.set_page_config(page_title="AI Weekly Planner", page_icon="🎓", layout="wide")
 
 st.markdown("""
 <style>
     .stButton>button {
         width: 100%;
+        border-radius: 8px;
+        height: 3em; 
     }
     .status-pending { color: orange; font-weight: bold; }
     .status-scheduled { color: green; font-weight: bold; }
+    div[data-testid="stExpander"] details summary p {
+        font-weight: 600;
+        font-size: 1.1em;
+    }
 </style>
 """, unsafe_allow_html=True)
+
+# --- Constants (Favorites Data) ---
+CATEGORIES = {
+    "Quantitative Reasoning": {
+        "tag": "Quantitative", "color": "red",
+        "sub": {
+            "Algebra": { "duration": 45 },
+            "Word Problems": { "duration": 45 },
+            "Geometry": { "duration": 45 },
+            "Data Interpretation": { "duration": 45 }
+        }
+    },
+    "Verbal Reasoning": {
+        "tag": "Verbal", "color": "orange",
+        "sub": {
+            "Analogies": { "duration": 30 },
+            "Sentence Completions": { "duration": 25 },
+            "Logic & Inference": { "duration": 45 },
+            "Reading Comprehension": { "duration": 50 },
+            "Vocab Memorization": { "duration": 20 },
+            "Reading a Book": { "duration": 30 }
+        }
+    },
+    "English": {
+        "tag": "English", "color": "blue",
+        "sub": {
+            "Sentence Completions": { "duration": 20 },
+            "Restatements": { "duration": 20 },
+            "Reading Comprehension": { "duration": 40 },
+            "Vocab Memorization": { "duration": 25 },
+            "Reading a Book": { "duration": 30 }
+        }
+    },
+    "Essay Writing": {
+        "tag": "Essay", "color": "green",
+        "sub": {
+            "Intro & Conclusion": { "duration": 30 },
+            "Argumentative para": { "duration": 30 },
+            "Critical Thinking para": { "duration": 30 },
+            "Analyze Sample": { "duration": 30 },
+            "Full-length Essay": { "duration": 35 }
+        }
+    },
+    "Practice Modes": {
+        "tag": "Simulation", "color": "purple",
+        "sub": {
+            "Timed Section (Quant)": { "duration": 20 },
+            "Timed Section (Verbal)": { "duration": 20 },
+            "Timed Section (English)": { "duration": 20 },
+            "Full Simulation": { "duration": 210 }
+        }
+    }
+}
 
 # --- Helper Functions ---
 def load_and_display_tasks():
@@ -37,224 +95,234 @@ def load_and_display_tasks():
     if not tasks:
         st.info("No tasks in the bank.")
         return []
-    
-    # Sort: Pending first, then Scheduled
     tasks.sort(key=lambda x: x.get("status") == "scheduled")
     return tasks
 
-async def perform_interpretation(text):
-    with st.spinner(" Interpreting task..."):
-        try:
-            return await interpreter.interpret_task(text)
-        except Exception as e:
-            st.error(f"Error interpreting task: {e}")
-            return None
-
-async def perform_scheduling(current_tasks, user_feedback=None):
-    with st.spinner("🤖 Orchestrating schedule... (this calls Gemini)"):
+async def perform_scheduling():
+    with st.spinner("🤖 Orchestrating schedule..."):
         try:
             perf_data = storage.get_performance()
             user_settings = storage.get_user_settings()
             
             # Simple callback mock
-            async def mock_callback(pmap):
-                pass 
+            async def mock_callback(pmap): pass 
 
-            if user_feedback:
-                 result = await scheduler.orchestrate_schedule(
-                    current_tasks, 
-                    user_feedback=user_feedback,
-                    performance_data=perf_data, 
-                    user_settings=user_settings,
-                    profile_update_callback=mock_callback
-                )
-            else:
-                result = await scheduler.orchestrate_schedule(
-                    current_tasks, 
-                    performance_data=perf_data, 
-                    user_settings=user_settings,
-                    profile_update_callback=mock_callback
-                )
+            tasks = storage.load_tasks()
+            result = await scheduler.orchestrate_schedule(
+                tasks, 
+                performance_data=perf_data, 
+                user_settings=user_settings,
+                profile_update_callback=mock_callback
+            )
             return result
         except Exception as e:
             st.error(f"Error during scheduling: {e}")
             return None
 
-def save_schedule_result(result, all_tasks):
-    # Logic copied from backend/main.py essentially
+def save_schedule_result(result):
     if not result: return
-
+    tasks = storage.load_tasks()
     scheduled_map = {str(item.task_id): item for item in result.schedule}
     updated_tasks = []
     
-    for t in all_tasks:
+    for t in tasks:
         t_id = str(t.get("id"))
         matches = scheduled_map.get(t_id)
         if matches:
             t["scheduled_day"] = matches.day
             t["scheduled_start"] = matches.start_time
-            if "duration" in t:
-                duration = t["duration"] 
-            elif "duration_mins" in t:
-                 duration = t["duration_mins"]
-            else:
-                 duration = 30 # fallback
             
+            duration = t.get("duration") or t.get("duration_mins") or 30
             t["scheduled_end"] = matches.start_time + (duration / 60)
             t["status"] = "scheduled"
             if getattr(matches, "rationale", None):
                 t["rationale"] = matches.rationale
         else:
-            # If we just re-generated, and it was previously scheduled but now dropped -> pending
             t["status"] = "pending"
             t["scheduled_day"] = None
             t["scheduled_start"] = None
             t["scheduled_end"] = None
-        
-        # Injected tasks logic is complex to replicate exactly without code duplication,
-        # for now let's stick to updating existing.
         updated_tasks.append(t)
     
     storage.save_tasks(updated_tasks)
     st.success("Schedule updated!")
 
+async def quick_add_task(name, duration, tag):
+    new_task = {
+        "name": name,
+        "duration": duration,
+        "tag": tag,
+        "status": "pending",
+        "location": "Home",
+        "priority": "Medium",
+        "is_locked": False,
+        "comments": ""
+    }
+    storage.add_task(new_task)
+    # st.rerun() will be called by caller
 
-# --- Main App Structure ---
+# --- Main App ---
 
-st.title("📅 AI Weekly Planner")
+st.title("🎓 Psychometric AI Coach")
 
-# Sidebar for navigation
-page = st.sidebar.radio("Navigation", ["Tasks", "Schedule", "Settings"])
+# Sidebar
+page = st.sidebar.radio("Navigation", ["Tasks", "Schedule", "Profile"])
 
 if page == "Tasks":
-    st.header("Task Bank")
-    
-    # Input
-    with st.form("new_task_form"):
-        raw_text = st.text_input("Add a new task (natural language):", placeholder="e.g., 'Study Math for 2 hours on Tuesday'")
-        submitted = st.form_submit_button("Add Task")
-        
-        if submitted and raw_text:
-            # Create an event loop for the async call
-            try:
-                interpreted_data = asyncio.run(perform_interpretation(raw_text))
-                if interpreted_data:
-                    # Convert to dict and save
-                    new_task_dict = interpreted_data.dict()
-                    # Storage handles ID assignment
-                    storage.add_task(new_task_dict)
-                    st.success(f"Added: {interpreted_data.name}")
-                    st.rerun()
-            except Exception as e:
-                st.error(f"Failed to add task: {e}")
-
-    st.divider()
-    
-    # Display
-    tasks = load_and_display_tasks()
-    
-    # Convert to DataFrame for nicer display
-    if tasks:
-        df_data = []
-        for t in tasks:
-            df_data.append({
-                "ID": t.get("id"),
-                "Name": t.get("name") or t.get("title"),
-                "Duration (m)": t.get("duration") or t.get("duration_mins"),
-                "Status": t.get("status"),
-                "Day": t.get("scheduled_day") if t.get("status") == "scheduled" else t.get("day"),
-                "Type": t.get("cognitive_type"),
-                "Action": "Delete" # Placeholder
-            })
-        
-        df = pd.DataFrame(df_data)
-        
-        # Display using columns for simple list
-        for index, row in df.iterrows():
-            c1, c2, c3, c4, c5 = st.columns([3, 1, 1, 1, 1])
-            with c1:
-                st.write(f"**{row['Name']}**")
-                if row['Status'] == 'scheduled':
-                     st.caption(f"📍 {row['Day']} @ {row.get('Day')} (This display logic is simple)")
-            with c2:
-                st.write(f"{row['Duration (m)']}m")
-            with c3:
-                status_color = "green" if row['Status'] == "scheduled" else "orange"
-                st.markdown(f":{status_color}[{row['Status']}]")
-            with c4:
-                st.write(row['Type'])
-            with c5:
-                if st.button("🗑️", key=f"del_{row['ID']}"):
-                    storage.delete_task(row['ID'])
-                    st.rerun()
-
-elif page == "Schedule":
-    st.header("Orchestration")
-    
-    tasks = storage.load_tasks()
-    
-    col1, col2 = st.columns([1, 1])
+    col1, col2 = st.columns([1, 2])
     
     with col1:
-        if st.button("🚀 Generate Full Schedule", type="primary"):
-            try:
-                result = asyncio.run(perform_scheduling(tasks))
-                if result:
-                    save_schedule_result(result, tasks)
-                    st.rerun()
-            except Exception as e:
-                st.error(f"Scheduling failed: {e}")
+        st.subheader("⚡ Quick Add")
+        # Favorites Implementation
+        for cat_name, cat_data in CATEGORIES.items():
+            with st.expander(f"{cat_name}", expanded=False):
+                for sub_name, sub_data in cat_data["sub"].items():
+                    if st.button(f"{sub_name} ({sub_data['duration']}m)", key=f"add_{cat_name}_{sub_name}"):
+                        asyncio.run(quick_add_task(sub_name, sub_data['duration'], cat_data['tag']))
+                        st.rerun()
 
+        st.divider()
+        st.subheader("🔒 Fixed Commitments")
+        # Constraint Form
+        with st.form("constraint_form"):
+            c_name = st.text_input("Name", placeholder="e.g. Gym")
+            c_day = st.selectbox("Day", ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"])
+            c1, c2 = st.columns(2)
+            c_start = c1.number_input("Start (Hr)", 0, 23, 18)
+            c_end = c2.number_input("End (Hr)", 0, 23, 19)
+            
+            if st.form_submit_button("Add Commitment"):
+                new_constraint = {
+                    "name": c_name,
+                    "day": c_day,
+                    "start": c_start,
+                    "end": c_end
+                }
+                settings = storage.get_user_settings()
+                settings["constraints"].append(new_constraint)
+                storage.update_user_settings(settings)
+                st.success("Commitment added!")
+                st.rerun()
+
+    with col2:
+        st.subheader("Task Bank")
+        tasks = load_and_display_tasks()
+        
+        # Display Tasks
+        if tasks:
+            for t in tasks:
+                # Simple Card Style
+                with st.container():
+                    c1, c2, c3 = st.columns([0.7, 0.2, 0.1])
+                    t_name = t.get("name") or t.get("title")
+                    t_dur = t.get("duration") or t.get("duration_mins")
+                    t_status = t.get("status")
+                    
+                    status_icon = "✅" if t_status == "scheduled" else "⏳"
+                    
+                    c1.markdown(f"**{t_name}** <span style='color:gray; font-size:0.8em'>({t_dur}m)</span>", unsafe_allow_html=True)
+                    if t_status == "scheduled":
+                         c1.caption(f"📍 {t.get('scheduled_day')} @ {t.get('scheduled_start')}:00")
+                    
+                    c2.write(f"{status_icon}")
+                    if c3.button("🗑️", key=f"del_{t.get('id')}"):
+                        storage.delete_task(t.get("id"))
+                        st.rerun()
+                    st.divider()
+        else:
+            st.info("No tasks yet. Use Quick Add!")
+
+elif page == "Schedule":
+    st.header("Weekly Schedule")
+    
+    col_act, col_clr = st.columns([1, 4])
+    if col_act.button("🚀 Orchestrate", type="primary"):
+        res = asyncio.run(perform_scheduling())
+        save_schedule_result(res)
+        st.rerun()
+        
+    if col_clr.button("Clear Schedule"):
+        storage.clear_schedule_data()
+        st.rerun()
+    
     st.divider()
     
-    # Schedule Visualization
+    # Schedule Visualization (Columns)
+    tasks = storage.load_tasks()
     scheduled_tasks = [t for t in tasks if t.get("status") == "scheduled"]
     
-    if not scheduled_tasks:
-        st.info("No tasks scheduled yet. Click Generate!")
-    else:
-        # Group by day
-        days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
-        
-        # Simple column view
-        cols = st.columns(7)
-        for i, day in enumerate(days):
-            day_tasks = [t for t in scheduled_tasks if t.get("scheduled_day") == day]
+    days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+    cols = st.columns(7)
+    
+    for i, day in enumerate(days):
+        with cols[i]:
+            st.markdown(f"**{day}**")
+            # Get tasks for this day
+            # Note: storage might save full day names "Monday", let's handle loose matching if needed
+            day_tasks = [t for t in scheduled_tasks if t.get("scheduled_day", "").startswith(day)]
             day_tasks.sort(key=lambda x: x.get("scheduled_start", 0))
             
-            with cols[i]:
-                st.markdown(f"#### {day[:3]}")
-                for t in day_tasks:
-                    start = t.get("scheduled_start", 0)
-                    end = t.get("scheduled_end", 0)
-                    name = t.get("name") or t.get("title")
-                    st.success(f"**{start:.1f}-{end:.1f}**\n{name}")
+            for t in day_tasks:
+                start = t.get("scheduled_start", 0)
+                end = t.get("scheduled_end", 0)
+                name = t.get("name") or t.get("title")
+                type_ = t.get("cognitive_type", "General")
+                
+                # Dynamic coloring based on type (simple mapping)
+                bg_color = "#333"
+                if "Quant" in type_: bg_color = "rgba(255, 75, 75, 0.2)"
+                elif "Verbal" in type_: bg_color = "rgba(255, 165, 0, 0.2)"
+                elif "English" in type_: bg_color = "rgba(0, 0, 255, 0.2)"
+                
+                st.markdown(f"""
+                <div style="background-color: {bg_color}; padding: 5px; border-radius: 5px; margin-bottom: 5px; font-size: 0.8em;">
+                    <strong>{start:.0f}:00</strong><br>{name}
+                </div>
+                """, unsafe_allow_html=True)
 
-    st.divider()
-    st.subheader("Negotiate")
-    user_input = st.text_input("Ask for changes (e.g. 'Move Math to Tuesday'):")
-    if st.button("Update Schedule"):
-        if user_input:
-            try:
-                result = asyncio.run(perform_scheduling(tasks, user_feedback=user_input))
-                if result:
-                    save_schedule_result(result, tasks)
-                    st.rerun()
-            except Exception as e:
-                 st.error(f"Negotiation failed: {e}")
-
-elif page == "Settings":
-    st.header("User Settings")
-    current_settings = storage.get_user_settings()
+elif page == "Profile":
+    st.header("👤 User Profile")
     
-    with st.form("settings_form"):
-        # Example settings fields
-        start_hour = st.number_input("Start Hour", value=current_settings.get("start_hour", 8))
-        end_hour = st.number_input("End Hour", value=current_settings.get("end_hour", 22))
+    settings = storage.get_user_settings()
+    
+    with st.form("profile_form"):
+        st.subheader("Personal Details")
+        s_username = st.text_input("Display Name", value=settings.get("username", ""))
         
-        if st.form_submit_button("Save Settings"):
-            new_settings = current_settings.copy()
-            new_settings["start_hour"] = start_hour
-            new_settings["end_hour"] = end_hour
+        c1, c2 = st.columns(2)
+        s_peak = c1.selectbox("Peak Energy Time", ["morning", "afternoon", "evening"], 
+                            index=["morning", "afternoon", "evening"].index(settings.get("peak_energy", "morning")))
+        
+        s_style = c2.selectbox("Scheduling Style", ["spread", "batch"], 
+                             index=["spread", "batch"].index(settings.get("scheduling_style", "spread")))
+        
+        st.subheader("Study Hours")
+        c3, c4, c5 = st.columns(3)
+        s_start = c3.number_input("Start Hour", 0, 23, settings.get("study_start", 8))
+        s_end = c4.number_input("End Hour", 0, 23, settings.get("study_end", 22))
+        s_limit = c5.number_input("Daily Limit (Hrs)", 1, 16, settings.get("max_daily_hours", 8))
+        
+        st.subheader("Manage Commitments")
+        # List existing constraints with delete capability
+        constraints = settings.get("constraints", [])
+        if constraints:
+            for i, c in enumerate(constraints):
+                col_c1, col_c2 = st.columns([4, 1])
+                col_c1.text(f"{c['name']} ({c['day']} {c['start']}-{c['end']})")
+                # We can't delete easily inside a form without rerunning, so maybe just show them here
+                # Or use a checkbox to mark for deletion
+        else:
+            st.caption("No fixed commitments added yet.")
+
+        if st.form_submit_button("Save Profile"):
+            new_settings = settings.copy()
+            new_settings.update({
+                "username": s_username,
+                "peak_energy": s_peak,
+                "scheduling_style": s_style,
+                "study_start": s_start,
+                "study_end": s_end,
+                "max_daily_hours": s_limit
+            })
             storage.update_user_settings(new_settings)
-            st.success("Settings saved!")
+            st.success("Profile saved!")
