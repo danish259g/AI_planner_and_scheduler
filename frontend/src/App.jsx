@@ -11,6 +11,8 @@ import UserProfileModal from './components/UserProfileModal';
 
 import './App.css';
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
+
 function App() {
   const [tasks, setTasks] = useState([]);
   const [isVibeOpen, setIsVibeOpen] = useState(false);
@@ -49,7 +51,7 @@ function App() {
 
   const fetchPerformance = async () => {
     try {
-      const res = await fetch('http://127.0.0.1:8000/api/performance');
+      const res = await fetch(`${API_BASE}/api/performance`);
       if (res.ok) {
         const data = await res.json();
         setPerformance(data);
@@ -63,7 +65,7 @@ function App() {
 
   const fetchSettings = async () => {
     try {
-      const res = await fetch('http://127.0.0.1:8000/api/settings');
+      const res = await fetch(`${API_BASE}/api/settings`);
       if (res.ok) {
         const data = await res.json();
         setUserSettings(data);
@@ -76,7 +78,7 @@ function App() {
   const handleSaveProfile = async () => {
     try {
       // Save Settings
-      await fetch('http://127.0.0.1:8000/api/settings', {
+      await fetch(`${API_BASE}/api/settings`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(userSettings)
@@ -93,7 +95,7 @@ function App() {
 
   const fetchTasks = async () => {
     try {
-      const res = await fetch('http://127.0.0.1:8000/api/tasks');
+      const res = await fetch(`${API_BASE}/api/tasks`);
       if (res.ok) {
         const data = await res.json();
         setTasks(data);
@@ -123,7 +125,7 @@ function App() {
       comments: ''
     };
     try {
-      const res = await fetch('http://127.0.0.1:8000/api/tasks', {
+      const res = await fetch(`${API_BASE}/api/tasks`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newTask)
@@ -140,7 +142,7 @@ function App() {
 
   const handleDeleteTask = async (taskId) => {
     try {
-      const res = await fetch(`http://127.0.0.1:8000/api/tasks/${taskId}`, {
+      const res = await fetch(`${API_BASE}/api/tasks/${taskId}`, {
         method: 'DELETE'
       });
       if (res.ok) {
@@ -157,7 +159,7 @@ function App() {
       setIsOrchestrating(true);
       setMessages(prev => [...prev, { sender: 'ai', message: "Orchestrating your schedule..." }]);
 
-      const response = await fetch('http://127.0.0.1:8000/api/schedule/generate', {
+      const response = await fetch(`${API_BASE}/api/schedule/generate`, {
         method: 'POST'
       });
 
@@ -196,7 +198,7 @@ function App() {
 
   const handleClearSchedule = async () => {
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/schedule/clear', {
+      const response = await fetch(`${API_BASE}/api/schedule/clear`, {
         method: 'POST'
       });
       if (response.ok) {
@@ -229,7 +231,7 @@ function App() {
     setTasks(newTasks);
 
     try {
-      await fetch('http://127.0.0.1:8000/api/tasks', {
+      await fetch(`${API_BASE}/api/tasks`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updatedTask)
@@ -241,7 +243,7 @@ function App() {
 
   const handleUpdatePerformance = async (category, score, self_eval) => {
     try {
-      const res = await fetch('http://127.0.0.1:8000/api/performance', {
+      const res = await fetch(`${API_BASE}/api/performance`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ category, score, self_eval })
@@ -258,7 +260,7 @@ function App() {
   const handleResetPerformance = async () => {
     if (!window.confirm("Are you sure you want to reset all performance data? This cannot be undone.")) return;
     try {
-      const res = await fetch('http://127.0.0.1:8000/api/performance/reset', {
+      const res = await fetch(`${API_BASE}/api/performance/reset`, {
         method: 'POST'
       });
       if (res.ok) {
@@ -298,7 +300,7 @@ function App() {
     setUserSettings(newSettings);
 
     // Save to backend
-    fetch('http://127.0.0.1:8000/api/settings', {
+    fetch(`${API_BASE}/api/settings`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(newSettings)
@@ -328,7 +330,7 @@ function App() {
               const newSettings = { ...userSettings, constraints: [...userSettings.constraints, c] };
               setUserSettings(newSettings);
               // Save to backend
-              fetch('http://127.0.0.1:8000/api/settings', {
+              fetch(`${API_BASE}/api/settings`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(newSettings)
